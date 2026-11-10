@@ -1,0 +1,15 @@
+Copyright (c) 2026 Pedro Fernández Enrile <penrile@salesforce.com>. All rights reserved.
+
+sdd-salesforce (the plugin, its skills, scripts, hooks, templates and documentation) is publicly available. Anyone may
+install it and use it in their own work.
+
+The following are not permitted without the author's written permission:
+- modifying the plugin or creating derivative works in order to distribute them;
+- redistributing, publishing, sublicensing or selling it, in whole or in part;
+- removing or altering this notice.
+
+Improvements are proposed to the author (for example, with an issue in the repository), who decides whether to
+incorporate them.
+
+THE PLUGIN IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE AUTHOR IS NOT LIABLE FOR ANY DAMAGE ARISING FROM ITS
+USE.

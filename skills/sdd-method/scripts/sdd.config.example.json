@@ -1,0 +1,271 @@
+{
+  "project": "acme",
+  "org_alias": "acme-demo",
+  "areas": [],
+  "environment": {
+    "inventory": "docs/baseline/environment.json",
+    "extra_skills": [],
+    "excluded_skills": []
+  },
+  "traceability": {
+    "_doc": {
+      "general": "Section read by scripts/check-traceability.py. Whatever is missing takes these same defaults: dictionaries are merged key by key, a list replaces the default one entirely and a type set to null is removed. Keys starting with «_» are ignored. Paths are relative to the project root (--project). The environment inventory is read from environment.inventory (written by check-environment.py).",
+      "paths.specs": "Glob or list of globs of the specs. From each one the requirements are read up to spec.requirements_end; the AC are checked against the union of all of them.",
+      "paths.traceability": "The AC → step → verification table, with its sections for exclusions and for steps without AC.",
+      "paths.steps": "Glob or list of globs of the step files of the delivery plan («### W1.1 — …»).",
+      "paths.integration": "integration.md, with the scopes table. Optional: only --graph uses it; without it, the scopes are not checked.",
+      "paths.status": "status.md, with the «Steps» table. Optional: it is only used to warn about rows in the initial state whose steps are already integrated.",
+      "paths.step_reports": "Folder of the step reports, one per step: <step_reports>/<step>.md.",
+      "paths.prior_validations": "File of the prior validations (the validation wave). Optional: if it does not exist, it is not an error.",
+      "paths.demo_walkthrough": "Demo walkthrough, where the closing step consolidates the demo steps. Optional.",
+      "paths.reviews": "Folder of the review reports, in subfolders <date>-<step>/.",
+      "paths.exclude": "Folder names that are never read as evidence (e.g. node_modules).",
+      "ids.requirement": "Regular expression of a requirement ID.",
+      "ids.ac": "Regular expression of an AC ID, with the groups (?P<req>…) and (?P<num>…) at the top level. The short form of a list («AC-PED-02.1 to 02.3, 02.5») is what runs from (?P<req>; «to» or «–» make a range within the same req.",
+      "ids.step": "Regular expression of a step ID, with (?P<num>…), the number a range runs through («W1.1-W1.4»), and, if there are waves, (?P<wave>…). A range cannot change anything other than num.",
+      "ids.step_example": "How a step is written in help messages.",
+      "ids.external_dependency": "Regular expression of an external dependency in «Depends on» (an open question or blocker); the size rule uses it. null to skip the check.",
+      "spec.requirements_end": "Text that closes the requirements part of the spec; what follows (the design) is not read. null to read the whole spec.",
+      "spec.priority": "Regular expression of the priority of a requirement, with one group (the priority).",
+      "spec.critical_priority": "Priority whose exclusion is a warning.",
+      "fields": "Names of the fields of a step, as written in «- **<name>:**». depends: dependencies («to close: …» are the finish-to-finish ones); satisfies: the AC or requirements it satisfies; test_first: «Test first», with the test classes between backticks; parallel: «Parallel with»; size: the size; skill: the execution skills, between backticks.",
+      "sections.exclusions": "Heading (starts with) of the exclusions section of traceability.md.",
+      "sections.steps_without_ac": "Heading (starts with) of the steps-without-AC section of traceability.md.",
+      "sections.report_cases": "Exact heading of the section of a step report where AC citations count.",
+      "sections.scopes": "Heading (starts with) of the section of integration.md with the scopes table.",
+      "markers.to_close": "In «Depends on», the segment containing this text holds finish-to-finish dependencies.",
+      "markers.except": "In «Satisfies», «R-XX (except AC-…)» subtracts those AC from the requirement.",
+      "markers.satisfies_end": "In «Satisfies», whatever follows any of these texts is not read as satisfied.",
+      "verifications": "Closed vocabulary of the «Verification» column of traceability.md: each label is a regular expression that has to match in full, and its type says where the AC citation is looked for. If the label has a group, that group is the step that builds it.",
+      "types": "Evidence types. mode «classes»: the source files; if the step field names classes (names expression, with one group), only those; with: how it is named in warnings. mode «sources»: any source file; where: how it is named in errors. mode «report»: the step report, only under sections.report_cases; closing: true if the closing step also consolidates it in the demo walkthrough. mode «review»: the .md files of reviews/<date>-<step>/ (with --no-review, a missing one is a warning). mode «validations»: the prior validations file.",
+      "demo_closing_step": "Step that consolidates the demo steps in the demo walkthrough (e.g. \"W4.2\"); with --step <that step>, each AC with a closing type has to be cited in the walkthrough. null if there is none.",
+      "negation.phrases": "A line with any of these phrases (as words, case-insensitive) does not count as a citation.",
+      "negation.marks": "A line with any of these marks (as words, case-sensitive) does not count as a citation.",
+      "evidence_states": "Valid states of the «Evidence state» column (the cell starts with one). The first one is the initial state.",
+      "status.section": "Exact heading of the section of status.md with the steps table.",
+      "status.state_column": "Column (from 1) with the state of the step in that table.",
+      "status.integrated": "Regular expression (case-insensitive) of a state that counts the step as integrated.",
+      "status.not_integrated": "Regular expression that, if it also matches, overrides the previous one («not integrated»).",
+      "sizes": "Sizes of «Size» and their units for the critical path of --graph.",
+      "size_rule.per_ac": "Minimum size by the number of AC of the step: from N AC, at least that size.",
+      "size_rule.external_dependency": "Minimum size of a step with an external dependency. null to skip the check.",
+      "change_log.section": "Exact heading (after «## ») of the section of each spec where its changes since the Design gate are recorded.",
+      "change_log.tags": "Git tag patterns, in order: deltas are counted from the most recent tag of the first pattern that has any (by default, the latest release-N and, if there is none, design-approved). Each requirement or AC added, modified or removed since then needs a row naming it. Empty list to skip the check."
+    },
+    "paths": {
+      "specs": [
+        "knowledge/specs/*.md"
+      ],
+      "traceability": "docs/delivery-plan/traceability.md",
+      "steps": [
+        "docs/delivery-plan/implementation/*.md"
+      ],
+      "integration": "docs/delivery-plan/integration.md",
+      "status": "docs/delivery-plan/status.md",
+      "step_reports": "docs/delivery-plan/step-reports",
+      "prior_validations": "docs/delivery-plan/w0-validations.md",
+      "demo_walkthrough": "docs/delivery-plan/demo-walkthrough.md",
+      "reviews": "reviews",
+      "exclude": [
+        "node_modules"
+      ]
+    },
+    "ids": {
+      "requirement": "R-[A-Z]+-\\d+",
+      "ac": "AC-[A-Z]+-(?P<req>\\d+)\\.(?P<num>\\d+)",
+      "step": "W(?P<wave>\\d+)\\.(?P<num>\\d+)",
+      "step_example": "Wn.m",
+      "external_dependency": "P-\\d+"
+    },
+    "spec": {
+      "requirements_end": "# Part 2",
+      "priority": "Priority: (P\\d)",
+      "critical_priority": "P0"
+    },
+    "fields": {
+      "depends": "Depends on",
+      "satisfies": "Satisfies",
+      "test_first": "Test first",
+      "parallel": "Parallel with",
+      "size": "Size",
+      "skill": "Skill"
+    },
+    "sections": {
+      "exclusions": "Exclusions",
+      "steps_without_ac": "Steps without AC",
+      "report_cases": "Verification cases",
+      "scopes": "Scopes"
+    },
+    "markers": {
+      "to_close": "to close",
+      "except": "except",
+      "satisfies_end": [
+        "**Source:**",
+        "validates the design of"
+      ]
+    },
+    "verifications": [
+      {
+        "label": "Apex test",
+        "type": "apex"
+      },
+      {
+        "label": "allowed/denied with `runAs`",
+        "type": "apex"
+      },
+      {
+        "label": "Jest",
+        "type": "jest"
+      },
+      {
+        "label": "React app tests",
+        "type": "react"
+      },
+      {
+        "label": "`sf agent test` case",
+        "type": "agent"
+      },
+      {
+        "label": "preview with trace and SOQL",
+        "type": "report"
+      },
+      {
+        "label": "preview with trace",
+        "type": "report"
+      },
+      {
+        "label": "record in the org",
+        "type": "report"
+      },
+      {
+        "label": "Login History",
+        "type": "report"
+      },
+      {
+        "label": "two-user test",
+        "type": "report"
+      },
+      {
+        "label": "`sf agent validate`",
+        "type": "report"
+      },
+      {
+        "label": "demo step",
+        "type": "demo"
+      },
+      {
+        "label": "report of (W0\\.\\d+) \\(V\\d+\\)",
+        "type": "prior"
+      },
+      {
+        "label": "code review",
+        "type": "review"
+      },
+      {
+        "label": "review of the `\\.agent`",
+        "type": "review"
+      },
+      {
+        "label": "template review",
+        "type": "review"
+      }
+    ],
+    "types": {
+      "apex": {
+        "mode": "classes",
+        "sources": [
+          "force-app/**/*Test.cls",
+          "force-app-*/**/*Test.cls"
+        ],
+        "field": "test_first",
+        "names": "`([A-Z][A-Za-z0-9_]*Test)`",
+        "with": "Apex",
+        "where": "a *Test.cls"
+      },
+      "jest": {
+        "mode": "sources",
+        "sources": [
+          "force-app/**/__tests__/*.test.js",
+          "force-app-*/**/__tests__/*.test.js"
+        ],
+        "where": "a Jest test"
+      },
+      "react": {
+        "mode": "sources",
+        "sources": [
+          "force-app/**/uiBundles/**/*.test.ts",
+          "force-app/**/uiBundles/**/*.test.tsx",
+          "force-app/**/uiBundles/**/*.test.js",
+          "force-app-*/**/uiBundles/**/*.test.ts",
+          "force-app-*/**/uiBundles/**/*.test.tsx",
+          "force-app-*/**/uiBundles/**/*.test.js"
+        ],
+        "where": "a React app test"
+      },
+      "agent": {
+        "mode": "sources",
+        "sources": [
+          "tests/**/*.yaml",
+          "tests/**/*.yml"
+        ],
+        "where": "a YAML case in tests/"
+      },
+      "report": {
+        "mode": "report"
+      },
+      "demo": {
+        "mode": "report",
+        "closing": true
+      },
+      "prior": {
+        "mode": "validations"
+      },
+      "review": {
+        "mode": "review"
+      }
+    },
+    "demo_closing_step": null,
+    "negation": {
+      "phrases": [
+        "does not cover",
+        "doesn't cover",
+        "not covered",
+        "does not verify",
+        "doesn't verify"
+      ],
+      "marks": [
+        "TODO"
+      ]
+    },
+    "evidence_states": [
+      "planned",
+      "exists",
+      "passes"
+    ],
+    "status": {
+      "section": "Steps",
+      "state_column": 4,
+      "integrated": "\\b(?:integrated|closed)\\b",
+      "not_integrated": "\\b(?:not|un)\\s*(?:yet\\s+)?(?:integrated|closed)\\b"
+    },
+    "sizes": {
+      "S": 1,
+      "M": 2,
+      "L": 3
+    },
+    "size_rule": {
+      "per_ac": {
+        "M": 4,
+        "L": 11
+      },
+      "external_dependency": "L"
+    },
+    "change_log": {
+      "section": "Change log",
+      "tags": [
+        "release-*",
+        "design-approved"
+      ]
+    }
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "_doc": {
+    "what_it_is": "Catalog of check-environment.py: which skills and tools a project needs according to its areas. The script reads it; Claude uses it to explain the inventory.",
+    "sf_skills_release": "Release of sf-skills (forcedotcom/sf-skills) the names were checked against. When sf-skills is updated, run check-environment.py --validate-catalog <skills/ folder of sf-skills> and fix whatever fails.",
+    "method_plugin": "Plugin that provides the 'method' skills. They are looked up in that plugin or, failing that, as a standalone copy in the project, parent or user layer. A skill with the same name in another plugin does not count (it is a different skill) and shows up as a warning.",
+    "method": "Skills of the plugin itself. They are only checked in the full check (Plan), not with --quick: if the bootstrap is running, the plugin is already installed.",
+    "base": "What every project needs: skills and tools. Minimum versions are not written here: they come from metadata.cliTools and metadata.minApiVersion of each skill.",
+    "areas": "One entry per area (lowercase ID with hyphens). Fields: description; skills; plugins (optional: plugins that must be installed and enabled); agents (optional: agents that must come in those plugins); tools (optional: tools the area needs even if no skill declares them).",
+    "skill_names": "Bare ('platform-soql-query'): looked up in every layer (project, parent, user, plugins). With a plugin ('agentforce-adlc:agentforce-generate'): it only counts if it comes from that plugin; a standalone copy does not replace it.",
+    "criterion": "Each area lists only what is needed to build and verify that piece, plus the area's coordination skill if there is one. Missing related skills (metadata.relatedSkills) show up as a warning, not as an error.",
+    "areas_outside_the_catalog": "A declared area that is not here is looked up in metadata.domains of the frontmatter of the installed skills, ignoring case, spaces and hyphens ('consumer-goods' = 'Consumer Goods'). It is flagged for review by hand.",
+    "config_example": "sdd.config.json of the project: {\"project\": \"acme\", \"org_alias\": \"acme-demo\", \"areas\": [\"agentforce\", \"flow\"], \"environment\": {\"inventory\": \"docs/baseline/environment.json\", \"extra_skills\": [\"platform-data-manage\"], \"excluded_skills\": []}}"
+  },
+  "sf_skills_release": "1.66.0",
+  "method_plugin": "sdd-salesforce",
+  "method": [
+    "sdd-bootstrap",
+    "sdd-method",
+    "implementation-integration-plan",
+    "independent-code-review",
+    "create-spec",
+    "create-decision",
+    "create-gotcha",
+    "read-knowledge",
+    "sdd-help"
+  ],
+  "base": {
+    "skills": [
+      "platform-docs-get",
+      "platform-metadata-api-context-get",
+      "platform-metadata-deploy",
+      "platform-metadata-retrieve",
+      "platform-soql-query",
+      "platform-apex-generate",
+      "platform-apex-test-generate",
+      "platform-apex-test-run",
+      "platform-permission-set-generate",
+      "dx-org-manage",
+      "dx-code-analyzer-run"
+    ],
+    "tools": [
+      "sf",
+      "git",
+      "python3"
+    ]
+  },
+  "areas": {
+    "agentforce": {
+      "description": "Agentforce agents with Agent Script (.agent): authoring, deployment, preview, functional and security tests, and session observation. Comes from the ADLC plugin.",
+      "skills": [
+        "agentforce-adlc:agentforce-generate",
+        "agentforce-adlc:agentforce-test",
+        "agentforce-adlc:agentforce-observe"
+      ],
+      "plugins": [
+        "agentforce-adlc"
+      ],
+      "agents": [
+        "adlc-author",
+        "adlc-engineer",
+        "adlc-qa"
+      ]
+    },
+    "flow": {
+      "description": "Flows: screen, autolaunched, record-triggered and scheduled.",
+      "skills": [
+        "automation-flow-generate"
+      ]
+    },
+    "lwc": {
+      "description": "Lightning Web Components: building and Jest, base components, and security (LWS), accessibility and SLDS checks.",
+      "skills": [
+        "experience-lwc-generate",
+        "experience-lwc-base-components-integrate",
+        "experience-lwc-security-validate",
+        "experience-accessibility-validate",
+        "design-systems-slds-validate"
+      ]
+    },
+    "lwr-site": {
+      "description": "Experience Cloud LWR sites through DigitalExperience metadata: pages, routes, views, themes, branding and guest access.",
+      "skills": [
+        "experience-lwr-site-generate"
+      ]
+    },
+    "ui-bundle-react": {
+      "description": "React (or Angular) apps as a UI bundle (uiBundles/): project, metadata, frontend, Salesforce data access, the site that hosts them and deployment.",
+      "skills": [
+        "experience-ui-bundle-app-coordinate",
+        "experience-ui-bundle-project-generate",
+        "experience-ui-bundle-metadata-generate",
+        "experience-ui-bundle-frontend-generate",
+        "experience-ui-bundle-salesforce-data-access",
+        "experience-ui-bundle-site-generate",
+        "experience-ui-bundle-deploy"
+      ]
+    },
+    "omnistudio": {
+      "description": "OmniStudio (standard runtime): OmniScripts, FlexCards, Integration Procedures, Data Mappers, and dependency and namespace analysis.",
+      "skills": [
+        "omnistudio-omniscript-generate",
+        "omnistudio-flexcard-generate",
+        "omnistudio-integration-procedure-generate",
+        "omnistudio-datamapper-generate",
+        "omnistudio-dependencies-analyze"
+      ]
+    },
+    "data360": {
+      "description": "Data 360 (Data Cloud): DLO and DMO schema, and dataspace access from permission sets.",
+      "skills": [
+        "data360-schema-get",
+        "platform-dataspace-access-configure"
+      ]
+    },
+    "omni-channel": {
+      "description": "Omni-Channel: base settings, service channel, queues and their routing configuration, members, presence statuses, agent users, permissions, routing flow and sidebar.",
+      "skills": [
+        "service-omni-channel-setup-coordinate",
+        "service-omni-base-settings-configure",
+        "service-omni-service-channel-configure",
+        "service-omni-queue-deploy",
+        "service-omni-queue-routing-config-deploy",
+        "service-omni-queue-members-assign",
+        "service-omni-presence-status-deploy",
+        "service-omni-agent-users-create",
+        "service-omni-permission-set-assign",
+        "service-omni-routing-flow-deploy",
+        "service-omni-sidebar-configure",
+        "service-omni-channel-inventory-analyze"
+      ]
+    },
+    "digital-engagement": {
+      "description": "Messaging for web and app (MIAW / Enhanced Chat): channel, deployment, widget on the site, agent on the channel and escalation to a human.",
+      "skills": [
+        "service-digital-engagement-channel-configure",
+        "service-digital-engagement-deployment-configure",
+        "service-digital-engagement-messaging-site-integrate",
+        "service-agentforce-channel-configure",
+        "service-agentforce-human-escalation-configure"
+      ]
+    },
+    "messaging-channels": {
+      "description": "Enhanced messaging channels (WhatsApp, SMS, Apple, Facebook, LINE) configured in headless mode: creation, routing, settings and activation.",
+      "skills": [
+        "service-de-headless-channel-configure",
+        "service-de-channel-create",
+        "service-de-channel-routing-configure",
+        "service-de-channel-settings-configure",
+        "service-de-channel-activate"
+      ]
+    },
+    "voice": {
+      "description": "Voice: Agentforce Contact Center channel (number, PstnVoice channel, routing), agent on the channel, and Native Voice recording and transcription.",
+      "skills": [
+        "service-agentforce-contact-center-coordinate",
+        "service-agentforce-channel-configure",
+        "service-native-voice-recording-transcription-configure"
+      ]
+    },
+    "field-service": {
+      "description": "Field Service: base data (work types, skills, territories, operating hours), scheduling policy with its rules and objectives, and data capture forms for the mobile app.",
+      "skills": [
+        "field-service-foundation-setup-designer-get",
+        "field-service-sobject-create-configure",
+        "field-service-scheduling-policy-designer-query",
+        "field-service-work-rule-designer-configure",
+        "field-service-objective-designer-configure",
+        "field-service-data-capture-reference-configure"
+      ]
+    },
+    "integration": {
+      "description": "Integration: connected apps and external client apps (OAuth, JWT), named and external credentials, callouts, platform events, Change Data Capture and event subscriptions.",
+      "skills": [
+        "integration-connectivity-generate",
+        "integration-connectivity-connected-app-configure",
+        "integration-eventing-cdc-configure",
+        "integration-eventing-subscription-configure"
+      ]
+    },
+    "data-model": {
+      "description": "Data model: objects, fields, value sets, validation rules, field reference of standard objects, and test data.",
+      "skills": [
+        "platform-custom-object-generate",
+        "platform-custom-field-generate",
+        "platform-value-set-generate",
+        "platform-validation-rule-generate",
+        "platform-data-and-tooling-api-context-get",
+        "platform-data-manage"
+      ]
+    },
+    "access-security": {
+      "description": "Security and record access: OWD, sharing rules, role hierarchy and permission set assignment to users.",
+      "skills": [
+        "platform-sharing-owd-configure",
+        "platform-sharing-rules-generate",
+        "platform-role-hierarchy-apply",
+        "dx-org-permission-set-assign"
+      ]
+    },
+    "analytics": {
+      "description": "Analytics: Lightning reports, custom report types and CRM Analytics (recipes, datasets and dashboards).",
+      "skills": [
+        "platform-report-generate",
+        "platform-custom-report-type-generate",
+        "crm-analytics-wave-generate"
+      ]
+    },
+    "ui-lightning": {
+      "description": "Lightning Experience: apps, tabs, Lightning pages (FlexiPage) and list views.",
+      "skills": [
+        "platform-lightning-app-coordinate",
+        "platform-custom-application-generate",
+        "platform-custom-tab-generate",
+        "platform-flexipage-generate",
+        "platform-list-view-generate"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "sdd-salesforce",
+  "description": "Spec-driven development with agents in Salesforce projects: the method's rules in a single skill (sdd-method) that a hook injects into every session, a lightweight bootstrap per POC, hooks that protect the project's org and the release, change requests with a change log, independent review and script-checked traceability. Answers in the user's language.",
+  "version": "0.4.0",
+  "author": {
+    "name": "Pedro Fernández Enrile, Principal SE",
+    "email": "penrile@salesforce.com"
+  },
+  "license": "LicenseRef-Propietaria",
+  "keywords": [
+    "adr",
+    "agentforce",
+    "change-requests",
+    "code-review",
+    "hooks",
+    "knowledge",
+    "salesforce",
+    "sdd",
+    "spec-driven-development",
+    "traceability"
+  ]
+}

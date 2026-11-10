@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec-driven development with agents on Salesforce · file map</title>
+<style>
+:root{--bg:#faf9f5;--card:#fff;--text:#1f1e1c;--muted:#5f5e5a;--faint:#8a8984;--border:rgba(0,0,0,.12);--border-strong:rgba(0,0,0,.24);--accent:#185FA5;--accent-bg:#E6F1FB;--line:#8a8984;
+--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1b;--card:#2a2a28;--text:#ecebe6;--muted:#b4b2a9;--faint:#888780;--border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.26);--accent:#85B7EB;--accent-bg:#0C447C;--line:#888780}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.55}
+.page{max-width:1300px;margin:0 auto;padding:28px 24px 40px}
+h1{font-size:22px;font-weight:500;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 22px;max-width:820px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+#wrap{position:relative}
+#sv{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;overflow:visible;pointer-events:none}
+.g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:28px;position:relative;z-index:1}
+.g.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.pp{font-size:11.5px;color:var(--muted);line-height:1.3;margin-top:2px}
+.lbl{position:relative;z-index:1;display:inline-block;font-size:12.5px;color:var(--muted);margin:0 0 7px;cursor:pointer;border-bottom:1px dotted var(--faint)}
+.cell{display:flex;flex-direction:column;gap:22px;justify-content:center}
+.col{display:flex;flex-direction:column;gap:22px;border:1px solid var(--border);border-radius:12px;padding:9px 9px 11px}
+.ph{font-size:14px;font-weight:500;margin-bottom:-12px;cursor:pointer;align-self:flex-start;border-bottom:1px dotted var(--faint)}
+.n{background:var(--card);border:1px solid var(--border-strong);border-radius:8px;padding:6px 9px;cursor:pointer;transition:opacity .15s,border-color .15s}
+.n:hover{border-color:var(--accent)}
+.n b{display:block;font-family:var(--mono);font-size:12px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
+.n span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.n.sk b{font-family:var(--sans);font-size:12.5px}
+.d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+.kn{background:#1D9E75}.dp{background:#7F77DD}.rv{background:#D85A30}.ot{background:#888780}.pl{background:#BA7517}
+.n.sel{outline:2px solid var(--accent);outline-offset:1px}.n.nb{border-color:var(--accent);background:var(--accent-bg)}
+#wrap.focus .n:not(.sel):not(.nb){opacity:.32}
+.ph.sel,.lbl.sel{color:var(--accent);border-bottom-color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--muted);margin:16px 0 0}
+#det{position:sticky;top:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;font-size:14px}
+#det h2{font-size:17px;font-weight:500;margin:0 0 4px;overflow-wrap:anywhere}
+#det h3{font-size:12.5px;font-weight:500;color:var(--muted);margin:14px 0 5px}
+#det p{margin:0 0 8px}
+.path{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin-bottom:8px}
+.tag{display:inline-block;font-size:12px;border-radius:6px;padding:1px 8px;margin:0 6px 6px 0;background:var(--accent-bg);color:var(--accent)}
+.pill{display:inline-block;font-family:var(--mono);font-size:12px;border:1px solid var(--border-strong);border-radius:6px;padding:2px 8px;margin:0 6px 6px 0;cursor:pointer;background:none;color:var(--text);text-align:left}
+.pill:hover{border-color:var(--accent)}
+.hint{color:var(--muted)}
+footer{margin-top:28px;font-size:12.5px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Spec-driven development with agents on Salesforce</h1>
+<p class="lead">This map shows the .md files that the <code>sdd-salesforce</code> plugin generates and maintains, the stage in which each one is used and which one feeds which. Click a file, a stage or a plugin skill to see what it does.</p>
+<div class="layout">
+<div>
+<div id="wrap">
+<svg id="sv" aria-hidden="true"></svg>
+<div class="lbl" data-g="entry">Entry · reading order</div>
+<div class="g g5" style="margin-bottom:28px;align-items:center">
+<div class="cell"><div class="n" id="claude"><b><i class="d ot"></i>CLAUDE.md</b><span>+ README.md</span></div></div>
+<div class="cell"><div class="n" id="handover"><b><i class="d dp"></i>handover.md</b></div><div class="n" id="orch"><b><i class="d pl"></i>orchestrator.md</b><span>in the plugin: sdd-method</span></div></div>
+<div class="cell"><div class="n" id="comm"><b><i class="d pl"></i>communication.md</b><span>in the plugin: sdd-method</span></div></div>
+<div class="cell"><div class="n" id="status"><b><i class="d dp"></i>status.md</b></div></div>
+</div>
+<div class="g g5" id="phases" style="margin-bottom:28px;align-items:start">
+<div class="col"><div class="ph" data-g="plan">Plan</div>
+<div class="n" id="baseline"><b><i class="d ot"></i>baseline/</b><span>environment-&lt;date&gt;.md + org snapshot</span></div>
+<div class="n" id="discovery"><b><i class="d kn"></i>discovery/</b><span>README.md + NN-&lt;topic&gt;.md</span></div>
+<div class="n" id="questions"><b><i class="d dp"></i>questions.md</b></div>
+</div>
+<div class="col"><div class="ph" data-g="design">Design</div>
+<div class="n" id="agentspec"><b><i class="d kn"></i>specs/</b><span>&lt;date&gt;-NNN_agent-spec-….md</span></div>
+<div class="n" id="spec"><b><i class="d kn"></i>specs/</b><span>&lt;date&gt;-NNN_&lt;capability&gt;.md</span></div>
+<div class="n" id="plan"><b><i class="d dp"></i>README.md</b><span>+ implementation/W&lt;n&gt;-….md</span></div>
+<div class="n" id="revSpec"><b><i class="d rv"></i>&lt;date&gt;-spec-plan/</b><span>round-NN-&lt;reviewer&gt;.md</span></div>
+</div>
+<div class="col"><div class="ph" data-g="execution">Execution</div>
+<div class="n" id="w0"><b><i class="d dp"></i>w0-validations.md</b></div>
+<div class="n" id="demo"><b><i class="d dp"></i>demo-walkthrough.md</b></div>
+<div class="n" id="brief"><b><i class="d pl"></i>author-brief.md</b><span>in the plugin: sdd-method</span></div>
+<div class="n" id="reports"><b><i class="d dp"></i>step-reports/</b><span>&lt;step&gt;.md</span></div>
+</div>
+<div class="col"><div class="ph" data-g="review">Review</div>
+<div class="n" id="revSteps"><b><i class="d rv"></i>&lt;date&gt;-&lt;step&gt;/</b><span>round-NN[-security].md</span></div>
+<div class="n" id="trace"><b><i class="d dp"></i>traceability.md</b></div>
+<div class="n" id="integ"><b><i class="d dp"></i>integration.md</b></div>
+</div>
+<div class="col"><div style="margin-bottom:-12px"><div class="ph" data-g="changes" style="display:inline-block;margin:0">Change requests</div><div class="pp">after the Design gate</div></div>
+<div class="n" id="changelog"><b><i class="d kn"></i>Change log</b><span>at the end of specs/&lt;spec&gt;.md</span></div>
+<div class="n" id="queue"><b><i class="d dp"></i>Change queue</b><span>in status.md · CH-NNN</span></div>
+</div>
+</div>
+<div class="lbl" data-g="knowledge">Knowledge · cross-cutting</div>
+<div class="g g5" style="margin-bottom:24px">
+<div class="n" id="decisions" style="grid-column:span 2"><b><i class="d kn"></i>decisions/</b><span>&lt;date&gt;-NNN_&lt;topic&gt;.md</span></div>
+<div class="n" id="gotchas"><b><i class="d kn"></i>gotchas/</b><span>&lt;topic&gt;.md</span></div>
+<div class="n" id="kreadme"><b><i class="d kn"></i>README.md</b></div>
+</div>
+<div class="lbl" data-g="plugin">sdd-salesforce plugin · the skills that create and use these files</div>
+<div class="g" style="row-gap:10px">
+<div class="n sk" id="sk-method"><b><i class="d pl"></i>sdd-method</b></div>
+<div class="n sk" id="sk-boot"><b><i class="d pl"></i>sdd-bootstrap</b></div>
+<div class="n sk" id="sk-iip"><b><i class="d pl"></i>implementation-integration-plan</b></div>
+<div class="n sk" id="sk-icr"><b><i class="d pl"></i>independent-code-review</b></div>
+<div class="n sk" id="sk-spec"><b><i class="d pl"></i>create-spec</b></div>
+<div class="n sk" id="sk-dec"><b><i class="d pl"></i>create-decision</b></div>
+<div class="n sk" id="sk-got"><b><i class="d pl"></i>create-gotcha</b></div>
+<div class="n sk" id="sk-read"><b><i class="d pl"></i>read-knowledge</b></div>
+<div class="n sk" id="sk-scripts"><b><i class="d pl"></i>scripts and hooks</b></div>
+<div class="n sk" id="sk-help"><b><i class="d pl"></i>sdd-help</b></div>
+</div>
+</div>
+<div class="legend">
+<span><i class="d kn"></i>knowledge/</span><span><i class="d dp"></i>docs/delivery-plan/</span><span><i class="d rv"></i>reviews/</span><span><i class="d ot"></i>root and docs/baseline/</span><span><i class="d pl"></i>plugin</span><span>A → B: B is built from A</span>
+</div>
+</div>
+<aside id="det" aria-live="polite"></aside>
+</div>
+<footer>Plugin sdd-salesforce 0.4.0 · Pedro Fernández Enrile, Principal SE</footer>
+</div>
+<script>
+const N={
+claude:{t:'CLAUDE.md + README.md',p:'<project>/CLAUDE.md · <project>/README.md',f:'All: it is the first thing read',o:'Generated by sdd-bootstrap',
+d:'The entry point of any session, and short: the project\'s org, the approver and the autonomy, the allowed channels, confidentiality, the document language and the reading order. The method\'s rules are not here: the plugin injects them at the start of every session (and after it is compacted, or at the first message if the project was bootstrapped in that session) and they are complete in the sdd-method skill; if the plugin\'s notice does not appear, the session stops. If a CLAUDE.md in a parent folder says otherwise, this one wins within the project. It holds no status: it points to status.md.',
+w:'Generated by sdd-bootstrap from the interview. After that, it only changes through a decision.'},
+handover:{t:'handover.md',p:'docs/delivery-plan/handover.md',f:'All',o:'sdd-bootstrap template',
+d:'Dated handover: current rules, work queue, file reservations and the next actionable step. It is used to pick the project up cold, without depending on the previous conversation. It is a snapshot: the live status is in status.md, and it is checked against reality before acting.',
+w:'The orchestrator, every time it hands over.'},
+orch:{t:'Orchestrator template',p:'plugin: skills/sdd-method/references/orchestrator.md',f:'All',o:'In the plugin: not copied into the project',
+d:'Text to start or resume the orchestrator session. It says what to read, how to check the handover against git and the org, how to assign steps with an explicit base, scope and skill, how to keep author, reviewer and integrator apart, when to deploy, how to run change requests, when to hand over and what to write in status.md.',
+w:'It lives in the plugin and is updated with it; the orchestrator uses it at every handover.'},
+comm:{t:'Communication protocol',p:'plugin: skills/sdd-method/references/communication.md',f:'All',o:'In the plugin: not copied into the project; the project\'s channels, in its CLAUDE.md',
+d:'Which channel is for what and who authorizes. Orchestration happens only between Claude sessions; every external message (Slack, Support), even an acknowledgement, needs the approver\'s explicit authorization for that message, and nobody writes directly to the customer. Reading documentation and searching Slack are allowed.',
+w:'It lives in the plugin; the allowed channels are set by the interview in the CLAUDE.md and change through a decision.'},
+status:{t:'status.md',p:'docs/delivery-plan/status.md',f:'All',o:'sdd-bootstrap template',
+d:'The single source of truth for the project\'s status. It holds the phase, the table of steps, the external requests (P-NN), the sessions, the file reservations, the blockers, the changes in the org and the evidence. If it contradicts reality (org, git), reality wins and it is corrected here. Every integrated step ends up recorded here.',
+w:'Only the orchestrator (the main session). The other sessions report their status back to it.'},
+baseline:{t:'docs/baseline/',p:'docs/baseline/environment-<date>.md · environment.json · org snapshot',f:'Plan (at the start)',o:'Created during the project',
+d:'Two starting snapshots, read-only. The environment inventory is written by check-environment.py: for each Salesforce skill needed, which layer it is in and whether it is present, missing or shadowed, plus the tools and the org\'s API version. The org snapshot (licences, packages, objects) is taken during the discovery. Any later change in the org is recorded in status.md against this snapshot.',
+w:'check-environment.py, run with --query-org (it reads the API only of the alias in sdd.config.json), and the Plan session. An environment gap, or an unchecked org API, goes into questions.md as a blocker for the Plan gate.'},
+discovery:{t:'knowledge/discovery/',p:'knowledge/discovery/README.md · NN-<topic>.md',f:'Plan',o:'README from sdd-bootstrap; the rest is created in Plan',
+d:'The AS-IS: analysis of the customer\'s sources (in docs/client/, outside git), the org, the official documentation and Slack. One document per topic, with a README that acts as the index. It is what the Plan gate approves, and it is where the spec\'s requirements and the first decisions come from.',
+w:'The Plan session, in the Explorer role: it only reads the code and the org, but it does write the Plan documents, without asking for an OK.'},
+questions:{t:'questions.md',p:'docs/delivery-plan/questions.md',f:'Plan and Design',o:'sdd-bootstrap template',
+d:'What is still to be decided or checked: pending decisions, open questions and technical validations that the org has to confirm in W0, each with the step it blocks. Nothing becomes an Active decision without the approver\'s OK. In the spec, open items are marked as [PENDING: Q-NN].',
+w:'The orchestrator. In Plan, the session records the environment gaps and the discovery\'s doubts without asking for an OK. Each open item is closed with a decision.'},
+spec:{t:'specs/<date>-NNN_<capability>.md',p:'knowledge/specs/<date>-NNN_<capability>.md',f:'Design',o:'Created during the project',
+d:'The project\'s contract, in two parts. Part 1, requirements: each R-<AREA>-NN with its source, its priority and acceptance criteria AC-<AREA>-NN.M in Given / When / Then form, which say where they are checked and include errors and denied permissions. Part 2, design and contracts, which unblock parallel work. It has no plan and no progress checkboxes, and no contract moves to Ready without AC.',
+w:'The Design session with the approver, using create-spec.'},
+agentspec:{t:'specs/<date>-NNN_agent-spec-….md',p:'knowledge/specs/<date>-NNN_agent-spec-<agent>.md',f:'Design',pr:'Only if there is an Agentforce agent',o:'Created during the project',
+d:'The agent\'s spec, in ADLC format: subagents, variables, actions, deterministic controls, personal data, injection, residual risks and a test plan with sf agent test. It hangs off the requirements of the main spec.',
+w:'The Design session with agentforce-generate (ADLC plugin, outside sdd-salesforce). It is reviewed by adlc-qa.'},
+plan:{t:'Delivery plan',p:'docs/delivery-plan/README.md · implementation/W<n>-….md',f:'Design',o:'README from sdd-bootstrap; the steps are created in Design',
+d:'What gets built, in what order and with which skill. The README sets the waves (W0 validate, W1 contracts, W2 build, W3 AI, W4 composition and release), the dependency graph and the critical path, with relative size S/M/L and no person-days. Each file in implementation/ holds the steps of one wave, all with the same template: Scope, Builds, Satisfies (the AC), Contracts, Depends on, Test first, Done when, Skill, Level and Size. The state of each step does not go here: it goes in status.md.',
+w:'The Design session, using implementation-integration-plan.'},
+revSpec:{t:'reviews/<date>-spec-plan/',p:'reviews/<date>-spec-plan/round-NN-<reviewer>.md',f:'Design (before the gate)',o:'Created during the project',
+d:'Review of the spec, the Agent Spec and the plan before the Design gate, by several reviewers with different focuses (requirements, design, security and permissions, plan; adlc-qa for the Agent Spec), with the answers of each round. Findings that change a rule end up as decisions.',
+w:'Reviewers with a separate context; the author answers round by round, but only the reviewer closes a finding.'},
+w0:{t:'w0-validations.md',p:'docs/delivery-plan/w0-validations.md',f:'Execution (wave W0)',pr:'Optional',o:'Created during the project',
+d:'One entry for each W0 validation, the spikes in the org for what the documentation does not guarantee: date, commands, evidence, result and which decision or step it affects. If one fails, that part goes back to Design. The validations come from questions.md.',
+w:'The orchestrator, with the evidence of each spike.'},
+demo:{t:'demo-walkthrough.md',p:'docs/delivery-plan/demo-walkthrough.md',f:'Execution (wave W4)',pr:'Optional',o:'Created during the project',
+d:'The end-to-end demo script: who, where, what is clicked and what is seen. The closing step of W4 cites here the AC that are verified as a demo step, and check-traceability.py checks it.',
+w:'The author of the W4 closing step.'},
+brief:{t:'Authors\' common brief',p:'plugin: skills/sdd-method/references/author-brief.md',f:'Execution',o:'In the plugin: not copied into the project',
+d:'Common rules for every author session (what to read, its scope, test first, do not deploy, explicit --target-org, what to hand back, the document language) plus the template for the individual assignment: branch, base, scope, AC, tests first and execution skill. The orchestrator sends it with every step or change.',
+w:'It lives in the plugin; the orchestrator fills in the assignment for each step.'},
+reports:{t:'step-reports/<step>.md',p:'docs/delivery-plan/step-reports/<step>.md',f:'Execution',o:'Created during the project',
+d:'A step\'s report, what the author hands over: branch and base, the AC it satisfies, verification cases, the output of check-traceability.py --step, the dry-run and the tests. It is the hinge of the cycle: it ties the plan step to its traceability row, its review and its entry in status.md. Without a step report, the step does not enter the integration gate.',
+w:'The author of the step, on its branch. Commit 1: the tests for the AC; commit 2: the implementation.'},
+revSteps:{t:'reviews/<date>-<step>/',p:'reviews/<date>-<step>/round-NN[-security].md',f:'Review of each step',o:'Created during the project',
+d:'The independent review report of a step. The reviewer pins the candidate (a specific commit plus the spec), reads the spec, the decisions and the gotchas, investigates beyond the diff and records findings with ID, severity and evidence. Verdict: changes_required, no_blocking_findings or incomplete. Steps that touch permissions get a second round focused on security.',
+w:'The reviewer, never the author. A self-review is labelled as such and counts for no gate.'},
+trace:{t:'traceability.md',p:'docs/delivery-plan/traceability.md',f:'Design and Review',o:'sdd-bootstrap template',
+d:'One row per AC: the step that builds its verification, the type of evidence and its state (planned → exists → passes, with the commit). check-traceability.py fails if an AC has no row, if a row points to a step that does not exist, if the graph has cycles or if an AC of the step has no test. That way the spec and the plan cannot drift apart without an alarm going off.',
+w:'Created in Design with the plan; the orchestrator brings it up to date when integrating each step.'},
+integ:{t:'integration.md',p:'docs/delivery-plan/integration.md',f:'Design and Review',o:'sdd-bootstrap template',
+d:'How the work of several agents is integrated: local git with one branch per step, roles, scopes and shared files (with reservations), contracts and their change procedure, the integration gate and serial deployment to the org, which is the only integration base.',
+w:'The Design session. If a frozen contract changes, it is done with a step of its own.'},
+decisions:{t:'knowledge/decisions/',p:'knowledge/decisions/<date>-NNN_<topic>.md',f:'All',o:'001 is generated by the bootstrap; the rest are created during the project',
+d:'One decision per file: context, decision, alternatives, consequences, "Verified with" (Salesforce skills and official documentation) and author. Statuses Active, Superseded and Proposed. They are never rewritten: a new decision supersedes the earlier one and the two are linked. Only Active ones are acted on. 001 is the adoption of the method, with the plugin version and the project\'s choices; the method\'s rules (M-01 to M-10) are in the plugin.',
+w:'Whoever decides: the approver, the agent (author: agent) or both, using create-decision.'},
+gotchas:{t:'knowledge/gotchas/',p:'knowledge/gotchas/<topic>.md',f:'All (above all Execution)',o:'Created during the project',
+d:'Traps already paid for: surprising behaviour of the org or the platform, with its evidence and its provenance (reproduced in the org, Slack or documentation). They usually link the report of the step where they were found, and they are consulted before touching the fragile parts.',
+w:'Whoever lost time on the trap, right afterwards, using create-gotcha.'},
+kreadme:{t:'knowledge/README.md',p:'knowledge/README.md',f:'All',o:'Generated by sdd-bootstrap',
+d:'The index of the knowledge: what each folder holds and with which skill it is written. The names, frontmatter and statuses of each type are set by the create-* skills, and read-knowledge says how to choose what to read by the headers, without opening whole documents.',
+w:'Generated by sdd-bootstrap.'},
+changelog:{t:'Change log (spec)',p:'## Change log, at the end of knowledge/specs/<date>-NNN_<capability>.md',f:'Change requests',o:'Section of the create-spec template; filled in from the Design gate on',
+d:'One row for each requirement or AC added, modified or removed since the Design gate: date, type (ADDED, MODIFIED or REMOVED), IDs, before → after, whether the behaviour changes, origin (CH-NNN, a decision, a finding or a validation), who approves it and the commit. It goes before the code or in the same commit, never after. A removed AC leaves the requirements and moves to the exclusions in the traceability. It only records spec changes: a bug or a tweak that does not touch the spec goes only into the queue.',
+w:'The author of the change. check-traceability.py reports an error if a requirement or AC changed since the last tag (release-N or design-approved) without its row.'},
+queue:{t:'Change queue',p:'docs/delivery-plan/status.md · "Change queue"',f:'Change requests',o:'Table in the status.md template',
+d:'Every change after the Design gate, whether it comes from the approver, a finding, a validation, the build or the customer: its CH-NNN, origin, what changes, level (0 bug, 1 tweak, 2 feature, 3 contract or risk), whether it is escalated, the session and the branch, and its state until integrated. Each change is made in a session of its own that starts from the files.',
+w:'The orchestrator, like the rest of status.md. With no active orchestrator, the session that receives the change takes on the role.'}};
+const SK={
+'sk-method':{t:'sdd-method',f:'All',files:['claude','status','handover','questions','baseline','trace','queue','changelog','orch','brief','comm','decisions'],
+d:'The method\'s rules in one place: the cycle with its gates, the roles, the Definition of Done, escalation according to the autonomy, communication, language, the environment verification, traceability and change requests (the short path of a bug or a tweak first). Its "core" block is what the plugin injects at the start of every session. It brings the scripts and, in references/, the why of each rule (M-01 to M-10), the orchestrator template, the authors\' brief and the communication protocol. It is updated with the plugin, so every POC uses the same rules.'},
+'sk-boot':{t:'sdd-bootstrap',f:'Bootstrap (before Plan)',files:['claude','handover','status','questions','plan','trace','integ','discovery','decisions','kreadme'],
+d:'Bootstraps a new project with a short interview: customer, org alias, approver, autonomy (strict or critical only), Salesforce areas, confidentiality, channels and, if it is not clear, the document language. It generates about 20 files: a short CLAUDE.md, README, .gitignore, sdd.config.json with the adopted method version, adoption decision 001, knowledge/, docs/delivery-plan/ and reviews/. It does not copy the method\'s rules or the scripts. It never overwrites: it only replaces the stock README from sf project generate if that is confirmed. Then it runs git init and the first commit, and a quick environment verification.'},
+'sk-iip':{t:'implementation-integration-plan',f:'Plan, Design, Review and change requests',files:['baseline','discovery','questions','plan','trace','integ','brief','reports','w0','demo','status','handover','orch','comm','queue','changelog'],
+d:'The skill that drives the method. In Plan it establishes the baseline, including the environment verification, and structures the discovery. In Design it derives the delivery plan from the spec: steps, dependencies, waves, levels of ceremony and traceability. In Review it drives the integration: integration gate, serial deployment, status and handover. Its references are discovery-knowledge, implementation, integration, orchestration-communication and templates.'},
+'sk-icr':{t:'independent-code-review',f:'Design and each step',files:['revSpec','revSteps'],
+d:'Reviews a specific candidate (a commit plus its changes) with a context separate from the author\'s. It investigates consequences outside the diff, records findings with evidence, verifies the fixes and gives a verdict. It declares its limit: the context is separate, but the model is the same. Its references are review-method, evaluation and reporting.'},
+'sk-spec':{t:'create-spec',f:'Design and change requests',files:['spec','questions','changelog'],
+d:'Creates the spec in two parts: first, requirements with IDs and mandatory acceptance criteria; then, design and contracts. It allows no plan and no progress checkboxes, and open items stay as [PENDING: Q-NN] linked to questions.md.'},
+'sk-dec':{t:'create-decision',f:'All',files:['decisions'],
+d:'Records a decision named <date>-NNN_<topic>.md, with its status, its author, the alternatives and the "Verified with" section, which is mandatory. If it supersedes another one, it links the two.'},
+'sk-got':{t:'create-gotcha',f:'All',files:['gotchas'],
+d:'Records a trap right after losing time on it, with its evidence and its provenance: reproduced in the org, seen in Slack or in the documentation.'},
+'sk-read':{t:'read-knowledge',f:'Before planning or building',files:['decisions','gotchas','spec','discovery','kreadme'],
+d:'Reads the project\'s why before touching anything: Active decisions, gotchas and specs for the scope, choosing by the headers. It only reads the current project, never the folders of other customers in the same workspace.'},
+'sk-help':{t:'sdd-help',f:'Before starting',files:['claude','kreadme'],
+d:'For someone who has just installed the plugin or wants to use it: what it is, what it installs in Claude Code and what it creates in each project, how to use it in a simple or a complex POC, good practices of spec-driven development on Salesforce and where the guide and this map are. It kicks in with questions such as "what is sdd-salesforce?" or "how do I get started?".'},
+'sk-scripts':{t:'Plugin scripts and hooks',f:'Plan, each step and each session',files:['baseline','spec','plan','trace','reports','revSteps','status','w0','demo','integ','changelog','claude'],
+d:'Scripts in sdd-method/scripts/, run from the plugin and configured in sdd.config.json. check-environment.py, at the start of Plan, looks for each required skill in every layer (project, parent folders, personal and plugins, including this plugin), marks it as present, missing or shadowed, and compares the tools and the org\'s API with the minimums of each sf-skill; an unchecked API is a blocker. check-traceability.py cross-checks the spec, the traceability, the steps, the step reports, the reviews and the status, and from the Design gate on it requires a Change log row for every changed requirement or AC. Hooks: when a session starts, is resumed or is compacted, and at the first message of a session that does not have it yet, they inject the method\'s core; before each command, they deny sf commands against another org or without --target-org, and ask for confirmation for publish, activate and, with strict autonomy, deployments.'}};
+const G={
+entry:{t:'Entry · reading order',d:'Every session, human or Claude, starts with the method\'s core injected by the plugin and then reads, in this order: CLAUDE.md → handover.md → status.md. Then the Active decisions, the gotchas and the specs for the scope it is about to touch and, last, the delivery plan. That way nobody depends on the memory of a previous conversation.',ids:['claude','handover','orch','comm','status']},
+plan:{t:'Plan stage',d:'It starts by verifying the environment (Salesforce skills, tools and the org\'s API version) and goes on with the discovery of the AS-IS, reading the code and the org only; gaps and doubts go into questions.md. Plan gate: the approver accepts the environment inventory (no gaps, or with the gaps accepted as a decision) and the discovery. On approval, the baseline is tagged in git.',ids:['baseline','discovery','questions']},
+design:{t:'Design stage',d:'First the what: requirements with checkable acceptance criteria. Then the how: design, contracts and decisions verified against skills and official documentation. From that, the delivery plan is derived with its traceability, and everything goes through an independent review. Design gate: the approver approves the spec, the decisions and the plan.',ids:['agentspec','spec','plan','revSpec']},
+execution:{t:'Execution stage',d:'One step at a time, each on its own branch: first a commit with the tests for the AC and then another with the implementation, followed by a dry-run and the step report. The gate for each step is the reviewer\'s verdict plus the step report; with strict autonomy, the human OK as well.',ids:['w0','demo','brief','reports']},
+review:{t:'Review stage',d:'Independent review of the candidate, the integration gate on the final content, merge and serial deployment to the org, tests with coverage, traceability to "passes" and an entry in status.md. Ready to integrate is not the same as integrated, deployed or accepted. Release gate: publish and activate always with an explicit human OK, and the release-N tag.',ids:['revSteps','trace','integ']},
+knowledge:{t:'Knowledge · cross-cutting',d:'The project\'s why, which outlasts the code. Decisions and gotchas are born in any stage and consulted in all of them: before planning or building something, the Active decisions and the gotchas for the scope are read.',ids:['decisions','gotchas','kreadme']},
+changes:{t:'Change requests',d:'Changes after the Design gate. Every change enters the change queue in status.md (CH-NNN) and is classified: 0 · bug (regression test; the spec does not change), 1 · tweak, 2 · feature (the delta and its row, approved before the code by the orchestrator or, if escalated, by the approver) and 3 · contract or risk (it goes through the Design gate again). When in doubt, the higher level; escalation to the approver is a separate matter. One change, one session, started from the files; the orchestrator integrates, does not review its own changes and is rotated at every phase change and after being compacted. If the change touches the spec, its Change log row goes before the code or in the same commit. Each release gets the release-N tag.',ids:['changelog','queue']},
+plugin:{t:'sdd-salesforce plugin',d:'The plugin sets up the project and teaches Claude to work with this method: requirements with AC before designing, verified decisions, a plan with traceability checked by a script, independent review with a separate context and human gates where the product changes. Click a skill to see which files it creates or uses.',ids:Object.keys(SK)}};
+const E=[['claude','handover'],['handover','comm'],['comm','status'],['baseline','discovery'],['discovery','questions'],['questions','decisions'],['discovery','spec'],['spec','agentspec'],['spec','plan'],['plan','revSpec'],['revSpec','decisions'],['plan','reports'],['brief','reports'],['reports','gotchas'],['reports','revSteps'],['reports','trace'],['w0','revSteps'],['demo','trace'],['revSteps','trace'],['revSteps','status',0.78]];
+const P=[['revSteps','queue','auto'],['w0','queue','top'],['questions','queue','up',0],['queue','changelog','auto'],['changelog','trace','auto'],['queue','reports','down',1],['queue','spec','gutter',2],['queue','decisions','drop',3]];
+const AE=E.concat(P);
+const W=document.getElementById('wrap'),S=document.getElementById('sv'),det=document.getElementById('det');
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const uses={};Object.entries(SK).forEach(([k,s])=>s.files.forEach(f=>(uses[f]=uses[f]||[]).push(k)));
+let sel=null;
+function R(id){const r=document.getElementById(id).getBoundingClientRect(),w=W.getBoundingClientRect();return{l:r.left-w.left,t:r.top-w.top,r:r.right-w.left,b:r.bottom-w.top}}
+function auto(A,B,f){f=f||0.5;
+if(Math.min(A.r,B.r)-Math.max(A.l,B.l)>10){const x1=A.l+(A.r-A.l)*f,x2=B.l+(B.r-B.l)*(f===0.5?0.5:f*0.5+0.25),dn=B.t>A.b,y1=dn?A.b:A.t,y2=dn?B.t-2:B.b+2,m=(y1+y2)/2;return`M${x1} ${y1}C${x1} ${m} ${x2} ${m} ${x2} ${y2}`}
+const rt=B.l>A.r,x1=rt?A.r:A.l,x2=rt?B.l-2:B.r+2,y1=(A.t+A.b)/2,y2=(B.t+B.b)/2,m=(x1+x2)/2;return`M${x1} ${y1}C${m} ${y1} ${m} ${y2} ${x2} ${y2}`}
+function poly(pts){return'M'+pts.map(p=>p[0]+' '+p[1]).join(' L')}
+function route(A,B,kind,k){const Ph=R('phases'),lane=Ph.b+6+5*(k||0),w=r=>r.r-r.l,cy=r=>(r.t+r.b)/2;
+if(kind==='top'){const x=A.l+w(A)*0.75,gx=B.l-24,y=Ph.t-12;return poly([[x,A.t],[x,y],[gx,y],[gx,cy(B)],[B.l-2,cy(B)]])}
+if(kind==='up'){const x=A.l+w(A)*0.78,x2=B.l+w(B)*0.2;return poly([[x,A.b],[x,lane],[x2,lane],[x2,B.b+2]])}
+if(kind==='down'){const x=A.l+w(A)*0.6,x2=B.l+w(B)*0.78;return poly([[x,A.b],[x,lane],[x2,lane],[x2,B.b+2]])}
+if(kind==='gutter'){const x=A.l+w(A)*0.4,gx=B.r+24;return poly([[x,A.b],[x,lane],[gx,lane],[gx,cy(B)],[B.r+2,cy(B)]])}
+if(kind==='drop'){const x=A.l+w(A)*0.8,x2=B.l+w(B)*0.85;return poly([[x,A.b],[x,lane],[x2,lane],[x2,B.t-2]])}
+if(kind==='right'){const gx=Math.max(A.r,B.r)+24;return poly([[A.r,cy(A)],[gx,cy(A)],[gx,cy(B)],[B.r+2,cy(B)]])}
+return auto(A,B)}
+function line(d,a,b,dash){const on=sel&&(a===sel||b===sel);
+return`<path d="${d}" fill="none" style="stroke:${on?'var(--accent)':'var(--line)'}" stroke-width="${on?1.8:1}" stroke-opacity="${sel&&!on?0.35:1}" marker-end="url(#ah)"/>`}
+function draw(){let h='<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>';
+E.forEach(([a,b,f])=>{h+=line(auto(R(a),R(b),f),a,b)});
+P.forEach(([a,b,kind,k])=>{h+=line(kind==='auto'?auto(R(a),R(b)):route(R(a),R(b),kind,k),a,b)});S.innerHTML=h}
+function pills(ids){return ids.map(i=>`<button class="pill" data-go="${i}">${esc((N[i]||SK[i]).t)}</button>`).join('')}
+function clear(){W.classList.remove('focus');document.querySelectorAll('.sel,.nb').forEach(e=>e.classList.remove('sel','nb'))}
+function mark(ids){W.classList.add('focus');ids.forEach(i=>document.getElementById(i).classList.add('nb'))}
+function intro(){det.innerHTML=`<h2>How to read the map</h2><p>The first four columns are the stages of the cycle, each one closed by its gate; the fifth, change requests: what happens to each change after the Design gate. At the top are the files every session reads before working; at the bottom, the knowledge, which is fed from every stage, and the plugin's skills.</p><p>Each arrow A → B means that B is built from A and links to it.</p><p class="hint">Click a file, the name of a stage or a plugin skill to see what it does and what it relates to.</p>`}
+function show(id){
+clear();if(sel===id){sel=null;intro();draw();return}sel=id;
+if(N[id]){const n=N[id];document.getElementById(id).classList.add('sel');
+const from=AE.filter(e=>e[1]===id).map(e=>e[0]),to=AE.filter(e=>e[0]===id).map(e=>e[1]),sk=uses[id]||[];mark(from.concat(to,sk));
+det.innerHTML=`<h2>${esc(n.t)}</h2><div class="path">${esc(n.p)}</div><span class="tag">${esc(n.f)}</span>${n.pr?`<span class="tag">${esc(n.pr)}</span>`:''}
+<h3>What it does</h3><p>${esc(n.d)}</p><h3>Who writes it</h3><p>${esc(n.w)}</p><h3>Origin</h3><p>${esc(n.o)}</p>
+${from.length?`<h3>Built from</h3>${pills(from)}`:''}${to.length?`<h3>Feeds</h3>${pills(to)}`:''}${sk.length?`<h3>Plugin skills that create or use it</h3>${pills(sk)}`:''}`}
+else if(SK[id]){const s=SK[id];document.getElementById(id).classList.add('sel');mark(s.files);
+det.innerHTML=`<h2>${esc(s.t)}</h2><span class="tag">${esc(s.f)}</span><h3>What it does</h3><p>${esc(s.d)}</p><h3>Files it creates or uses</h3>${pills(s.files)}`}
+else if(G[id]){const g=G[id];document.querySelector(`[data-g="${id}"]`).classList.add('sel');mark(g.ids);
+det.innerHTML=`<h2>${esc(g.t)}</h2><p>${esc(g.d)}</p><h3>What is here</h3>${pills(g.ids)}`}
+draw()}
+document.querySelectorAll('.n').forEach(e=>{e.tabIndex=0;e.setAttribute('role','button');e.addEventListener('click',()=>show(e.id));e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();show(e.id)}})});
+document.querySelectorAll('[data-g]').forEach(e=>{e.tabIndex=0;e.setAttribute('role','button');e.addEventListener('click',()=>show(e.dataset.g));e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();show(e.dataset.g)}})});
+det.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){sel=null;show(b.dataset.go)}});
+new ResizeObserver(draw).observe(W);document.fonts.ready.then(draw);intro();draw();
+</script>
+</body>
+</html>

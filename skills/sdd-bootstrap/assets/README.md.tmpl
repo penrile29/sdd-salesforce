@@ -1,0 +1,17 @@
+# {{PROJECT}} · {{CLIENT}}
+
+The client's SFDX project (org **{{ORG}}**), with the spec-driven development method of `sdd-salesforce`
+{{VERSION}}. Start with [CLAUDE.md](CLAUDE.md) → [handover](docs/delivery-plan/handover.md). The method's rules and
+scripts live in the plugin, not in this project.
+
+| Folder | Contents |
+|---|---|
+| `knowledge/` | Discovery (AS-IS), specs, decisions and gotchas: the why |
+| `docs/delivery-plan/` | Operational status and change queue, handover, open questions, delivery plan and traceability |
+| `docs/baseline/` | Snapshot of the org at the start and the environment inventory (read-only) |
+| `docs/client/` | The client's sources: **confidential, not versioned** |
+| `reviews/` | Independent review reports, per change and per round |
+| `scripts/` | Anonymous Apex for seeds and cleanup, if needed |
+| `force-app/` | The project's metadata |
+| `data/`, `tests/` | Synthetic data and test specs, when needed |
+| `sdd.config.json` | Org, areas, autonomy and the adopted method version |

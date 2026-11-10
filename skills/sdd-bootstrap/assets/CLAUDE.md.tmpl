@@ -1,0 +1,48 @@
+# {{PROJECT}} · {{CLIENT}}
+
+SFDX project that works with the **sdd-salesforce {{VERSION}}** method (a Claude Code plugin). These instructions apply
+in this folder and everything below it; if a `CLAUDE.md` in a parent folder says otherwise, this one wins here. **They
+hold no task status**: the status lives in [`docs/delivery-plan/status.md`](docs/delivery-plan/status.md).
+
+The **method's rules are not in this file**: the plugin injects them at the start of every session, when it is
+resumed, after it is compacted and in the first message of a session that does not have them yet, and they are
+complete in the `sdd-salesforce:sdd-method` skill. **If you do not see the notice «[sdd-salesforce …] sdd project» in
+your context (and you have not just bootstrapped the project in this session with `sdd-bootstrap`), the plugin is not
+loaded: stop and say so before doing any work.**
+
+## The project
+
+- **Org:** **{{ORG}}**, the only one for this project (`org_alias` in `sdd.config.json`). It expires on
+  **{{EXPIRY}}**. Every `sf` command that touches an org carries `--target-org {{ORG}}`.
+- **Approver:** **{{APPROVER}}**. **Autonomy:** `{{AUTONOMY}}`. {{ESCALATION}}.
+- **Planned areas:** {{AREAS}}.
+<!-- if language -->
+- **Document language:** `{{LANGUAGE}}` (`method.language`). Headings, fields, IDs, git tags and file names stay as
+  in the templates.
+<!-- end if -->
+- **Adoption of the method and the project's choices:**
+  [decision 001](knowledge/decisions/{{SEED}}).
+
+## Reading order
+
+1. [`docs/delivery-plan/handover.md`](docs/delivery-plan/handover.md): operational entry point and the last dated
+   handover.
+2. [`docs/delivery-plan/status.md`](docs/delivery-plan/status.md): the single source of truth for status; the
+   orchestrator writes it.
+3. `knowledge/`: `Active` decisions, gotchas and the specs for the scope you are about to touch (`read-knowledge`
+   skill).
+4. The delivery plan (`docs/delivery-plan/README.md`, `implementation/`, `integration.md`) and the latest environment
+   inventory (`docs/baseline/environment-*.md`), once they exist.
+
+## Communication
+
+- **Allowed channels:** {{CHANNELS}}.
+- Every external message, even an acknowledgement, needs {{APPROVER}}'s OK for that message. Nobody writes to the
+  client directly.
+
+## Data and confidentiality
+
+- `docs/client/` ({{CLIENT_SOURCES}}) is **confidential and not versioned**. The discovery cites it by document and
+  page, without copying its content.
+- Internal use only: {{INTERNAL_ONLY}}.
+- In the org and in `data/`, **synthetic data only**.
