@@ -4,6 +4,12 @@ Each project records in its decision 001 and in `sdd.config.json` the version of
 plugin is a different one, the start hook and `check-environment.py` warn about it: check here what changed and, if it
 affects the project, record it with a decision.
 
+## 0.4.1 · 2026-11-11 (release)
+
+**The map opens on the web.** GitHub shows HTML files as source code, so the README now links `MAP.html` to its
+GitHub Pages copy, https://penrile29.github.io/sdd-salesforce/MAP.html. The map itself does not change, and the copy
+in the plugin still opens offline. Nothing else changes: projects on 0.4.0 do not need a decision.
+
 ## 0.4.0 · 2026-11-10 (release)
 
 **The plugin is in English, with a single copy.** Skills, references, templates, scripts, hooks, README, GUIDE, MAP

@@ -9,12 +9,13 @@ teaches Claude to work with this method:
 4. Independent review with a separate context.
 5. Human gates at the points that change the product.
 
-Author: **Pedro Fernández Enrile, Principal SE**. Version 0.4.0 (changes in [CHANGELOG.md](CHANGELOG.md)).
+Author: **Pedro Fernández Enrile, Principal SE**. Version 0.4.1 (changes in [CHANGELOG.md](CHANGELOG.md)).
 
 The methodology, explained for the team, is in [GUIDE.md](GUIDE.md).
-[MAP.html](MAP.html) is an interactive map of the files that the method generates and maintains, by stage and with
-the skills that create them: it opens in any browser, offline. The plugin's design, its reviews and its real-session
-tests stay in the development repository: they are not part of the package.
+[MAP.html](https://penrile29.github.io/sdd-salesforce/MAP.html) is an interactive map of the files that the method
+generates and maintains, by stage and with the skills that create them: the link opens it on the web, and the copy in
+the plugin opens in any browser, offline. The plugin's design, its reviews and its real-session tests stay in the
+development repository: they are not part of the package.
 
 ## What it includes
 
