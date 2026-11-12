@@ -9,7 +9,10 @@ teaches Claude to work with this method:
 4. Independent review with a separate context.
 5. Human gates at the points that change the product.
 
-Author: **Pedro Fernández Enrile, Principal SE**. Version 0.4.1 (changes in [CHANGELOG.md](CHANGELOG.md)).
+Two profiles: **full**, the whole method, and **light**, the same gates and the same spec with AC with less ceremony
+around them, for demos. UI tests use Playwright's own Chromium, per project.
+
+Author: **Pedro Fernández Enrile, Principal SE**. Version 0.5.0 (changes in [CHANGELOG.md](CHANGELOG.md)).
 
 The methodology, explained for the team, is in [GUIDE.md](GUIDE.md).
 [MAP.html](https://penrile29.github.io/sdd-salesforce/MAP.html) is an interactive map of the files that the method
@@ -39,8 +42,11 @@ about to start, plan or build something):
   project and survive compaction;
 - **before every Bash command**, they deny `sf` commands against another org or without `--target-org` when they
   change an org, and ask for confirmation for `sf agent publish`, `sf agent activate` and, with strict autonomy, for a
-  deploy. Reads also need `--target-org`, so as not to read data from the default org, which may belong to another
-  customer.
+  deploy (with the light profile, none of the three asks). Reads also need `--target-org`, so as not to read data
+  from the default org, which may belong to another customer;
+- **before every tool of the Playwright MCP**, they deny opening the host of another Salesforce org (a sandbox counts
+  as another org): the browser only opens the project's org, by its My Domain, which the environment verification
+  records. Until it is recorded, they ask before opening any org host.
 
 **Scripts** (in `skills/sdd-method/scripts/`; they run from the plugin and are not copied):
 - **`check-environment.py`:** at the start of Plan, verifies that the Salesforce skills, the tools and the API version
@@ -65,6 +71,9 @@ and the template headings in English.
   missing.
 - Salesforce CLI (`sf`), `git` and `python3` (3.9 or later; some sf-skills need 3.10). Some skills also need `jq` and
   `node`.
+- For UI tests: `node` and `npx`, and Playwright's Chromium for the pinned `@playwright/mcp` (the environment
+  verification gives the command that installs it). The MCP is declared per project in `.mcp.json`, which
+  `sdd-bootstrap` writes; check whether your organization requires approving MCP servers before using it.
 
 ## Installation
 
@@ -157,13 +166,27 @@ explains the method. They are not needed.
   writes, with a subagent that reviews. The handover and the queue are used the same way; orchestration across several
   author sessions, only if needed.
 
-## How the work is split, and autonomy
+## How the work is split: profile and autonomy
 
-An orchestrator assigns the steps to author sessions, and sessions or subagents with a separate context review them.
+An orchestrator launches author subagents in parallel, each in its own worktree and with the files it touches
+reserved, and one reviewer subagent with a separate context per step; it integrates and deploys one step at a time.
 The ceremony of each change is set by its level (0 to 3): a text tweak is not treated like a permissions change.
 
-- **Strict autonomy:** human OK at every gate, also at every Execute step.
-- **Critical only:** the gate of each step is the reviewer's verdict; user experience, approved requirements, stack
-  changes and blockers are escalated.
+The bootstrap asks one question with three options:
+- **Full, OK at every step** (`strict`): human OK at every gate, also at every Execute step.
+- **Full, critical only** (`critical`): the gate of each step is the reviewer's verdict; user experience, approved
+  requirements, stack changes and blockers are escalated.
+- **Light:** the same three gates and the spec with requirements and AC, with a flat delivery plan, no test-first, no
+  review of the spec and the plan before the Design gate, and deploy, publish and activate in the project's org without
+  asking. The release gate becomes "demo accepted". Good for demos with little risk and a short deadline.
 
-In both cases, the Plan gate, the Design gate, the release and every external message always need the approver's OK.
+In all of them, the Plan gate, the Design gate, the release, every irreversible org setting and every external message
+need the approver's OK.
+
+## Browser for UI tests
+
+With `browser: true` in the interview (proposed when there are UI areas), the project gets a `.mcp.json` with the
+Playwright MCP pinned by the plugin, with its own Chromium and its profile in `.playwright/` (not versioned). The
+Browser pane and Claude in Chrome are not used: they are disabled in enterprise orgs. You approve the MCP the first
+time, open a new session in the project and log in to the org by hand in the Chromium window. UI AC are verified with
+`browser check`, and the demo walkthrough is run in Chromium. Details in `skills/sdd-method/references/browser.md`.

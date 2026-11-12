@@ -14,7 +14,12 @@ loaded: stop and say so before doing any work.**
 
 - **Org:** **{{ORG}}**, the only one for this project (`org_alias` in `sdd.config.json`). It expires on
   **{{EXPIRY}}**. Every `sf` command that touches an org carries `--target-org {{ORG}}`.
-- **Approver:** **{{APPROVER}}**. **Autonomy:** `{{AUTONOMY}}`. {{ESCALATION}}.
+- **Approver:** **{{APPROVER}}**. **Profile:** `{{PROFILE}}`. **Autonomy:** `{{AUTONOMY}}`. {{ESCALATION}}.
+<!-- if profile=light -->
+- **Light profile:** deploying, `sf agent publish` and `sf agent activate` against **{{ORG}}** need no OK in this
+  project (if a parent `CLAUDE.md` asks to confirm them, this rule wins here). The light block of the method, which the
+  plugin injects after the core, says what else changes.
+<!-- end if -->
 - **Planned areas:** {{AREAS}}.
 <!-- if language -->
 - **Document language:** `{{LANGUAGE}}` (`method.language`). Headings, fields, IDs, git tags and file names stay as
@@ -40,6 +45,14 @@ loaded: stop and say so before doing any work.**
 - Every external message, even an acknowledgement, needs {{APPROVER}}'s OK for that message. Nobody writes to the
   client directly.
 
+<!-- if browser -->
+## Browser
+
+UI tests use the project's Playwright MCP ([`.mcp.json`](.mcp.json), server `playwright`, {{BROWSER_VERSION}}) with
+Playwright's own Chromium; its profile and output live in `.playwright/`, which is not versioned. Only against
+**{{ORG}}**. The user approves the MCP the first time and logs in to the org by hand in the Chromium window.
+
+<!-- end if -->
 ## Data and confidentiality
 
 - `docs/client/` ({{CLIENT_SOURCES}}) is **confidential and not versioned**. The discovery cites it by document and

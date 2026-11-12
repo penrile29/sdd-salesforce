@@ -18,7 +18,7 @@ VOCABULARIES = ("en", "es")
 # Spanish key → English key, at any level of sdd.config.json.
 KEYS = {
     "proyecto": "project", "metodo": "method", "aprobador": "approver", "autonomia": "autonomy",
-    "vocabulario": "vocabulary", "idioma": "language",
+    "vocabulario": "vocabulary", "idioma": "language", "perfil": "profile",
     "entorno": "environment", "inventario": "inventory", "skills_extra": "extra_skills",
     "skills_excluidas": "excluded_skills",
     "trazabilidad": "traceability",
@@ -48,6 +48,7 @@ NAME_MAPS = {("traceability", "types"), ("traceability", "sizes"), ("traceabilit
 # Spanish value → English value, by the (English) key that holds it.
 VALUES = {
     "autonomy": {"estricta": "strict", "critico": "critical"},
+    "profile": {"completo": "full", "ligero": "light"},
     "mode": {"clases": "classes", "fuentes": "sources", "ficha": "report", "revision": "review",
              "validaciones": "validations"},
     "field": {"depende": "depends", "cumple": "satisfies", "prueba": "test_first", "paralelo": "parallel",
@@ -56,12 +57,16 @@ VALUES = {
 
 AUTONOMIES = ("strict", "critical")
 
+# method.profile (0.5.0): «full» is the whole method; «light» relaxes the process and implies the «critical» autonomy.
+# A project without the key is «full».
+PROFILES = ("full", "light")
+
 # Area IDs of the catalog (skills-by-area.json) that were Spanish in 0.2 and 0.3.
 AREAS = {"sitio-lwr": "lwr-site", "canales-mensajeria": "messaging-channels", "voz": "voice", "integracion": "integration",
          "modelo-datos": "data-model", "seguridad-acceso": "access-security", "analitica": "analytics"}
 
 # Interview answers of bootstrap.py (sdd-bootstrap) as 0.2 and 0.3 wrote them: Spanish key → English key. Their
-# autonomy values use VALUES["autonomy"] and their areas, AREAS. «perfil» (the light profile) was retired in 0.2.
+# autonomy values use VALUES["autonomy"] and their areas, AREAS. «perfil» is the profile (0.5.0), with VALUES["profile"].
 ANSWER_KEYS = {"proyecto": "project", "cliente": "client", "caducidad": "expiry", "aprobador": "approver",
                "autonomia": "autonomy", "fuentes_cliente": "client_sources", "solo_interno": "internal_only",
                "canales": "channels", "fecha": "date", "idioma": "language", "perfil": "profile"}
@@ -131,11 +136,38 @@ def areas(v):
 
 
 def normalize(raw):
-    """(configuration with English keys and values, warnings). raw is not modified."""
+    """(configuration with English keys and values, warnings). raw is not modified.
+
+    It also applies the profile rule: with method.profile «light», the autonomy is «critical»."""
     warnings = []
     if not isinstance(raw, dict):
         return {}, warnings
-    return _normalize(copy.deepcopy(raw), (), warnings), warnings
+    out = _normalize(copy.deepcopy(raw), (), warnings)
+    if isinstance(out.get("method"), dict):
+        out["method"] = apply_profile(out["method"], warnings)
+    return out, warnings
+
+
+def profile(method):
+    """«full» or «light» of an (English) method section; anything else is «full»."""
+    p = method.get("profile") if isinstance(method, dict) else None
+    return p if p in PROFILES else "full"
+
+
+def apply_profile(method, warnings):
+    """The method section with the profile rule applied: an unknown profile is «full» and «light» forces «critical»."""
+    p = method.get("profile")
+    if p is None:
+        return method
+    if p not in PROFILES:
+        warnings.append("config: method.profile «%s» is not valid (valid: %s); «full» is used" % (p, ", ".join(PROFILES)))
+        method["profile"] = "full"
+    elif p == "light" and method.get("autonomy") != "critical":
+        if method.get("autonomy") is not None:
+            warnings.append("config: method.profile «light» implies the «critical» autonomy; method.autonomy «%s» is "
+                            "ignored" % method.get("autonomy"))
+        method["autonomy"] = "critical"
+    return method
 
 
 def vocabulary(raw):
@@ -311,6 +343,7 @@ TRACEABILITY = {
             {"label": "Login History", "type": "ficha"},
             {"label": "prueba con dos usuarios", "type": "ficha"},
             {"label": "`sf agent validate`", "type": "ficha"},
+            {"label": "comprobación en navegador", "type": "ficha"},
             {"label": "paso de demo", "type": "demo"},
             {"label": "ficha de (W0\\.\\d+) \\(V\\d+\\)", "type": "previa"},
             {"label": "revisión de código", "type": "review"},
@@ -371,6 +404,7 @@ TRACEABILITY = {
             {"label": "Login History", "type": "report"},
             {"label": "two-user test", "type": "report"},
             {"label": "`sf agent validate`", "type": "report"},
+            {"label": "browser check", "type": "report"},
             {"label": "demo step", "type": "demo"},
             {"label": "report of (W0\\.\\d+) \\(V\\d+\\)", "type": "prior"},
             {"label": "code review", "type": "review"},

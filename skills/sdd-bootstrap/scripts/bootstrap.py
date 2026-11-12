@@ -28,13 +28,16 @@ Usage:
 
 answers.json holds the interview answers:
     {"project": "…", "client": "…", "org": "<alias>", "expiry": "YYYY-MM-DD, «no expiry» or «to be confirmed»",
-     "approver": "…", "autonomy": "strict|critical", "areas": ["agentforce", …],
-     "client_sources": "…", "internal_only": "…", "channels": "…", "date": "YYYY-MM-DD (optional)",
-     "language": "language of the documents, e.g. «es» (optional)"}
+     "approver": "…", "profile": "full|light (optional, full)", "autonomy": "strict|critical (light: critical)",
+     "areas": ["agentforce", …], "client_sources": "…", "internal_only": "…", "channels": "…",
+     "date": "YYYY-MM-DD (optional)", "language": "language of the documents, e.g. «es» (optional)",
+     "browser": true|false (optional; by default, true if an area of the catalog's «browser.areas» is planned)}
     All values are text, except areas (a list of texts), and they cannot contain double quotes, backslashes or line
     breaks (they would break the frontmatter). A null counts as a missing key. The Spanish keys and values of 0.2 and
     0.3 are accepted as aliases (sdd_vocab.ANSWER_KEYS); if a key comes in both languages, the English one wins with a
-    warning. «profile» (the light profile) was retired: it is ignored with a warning.
+    warning. With «profile» «light», the autonomy is «critical» (another one is ignored with a warning). With «browser»,
+it also writes .mcp.json with the pinned Playwright MCP (skills-by-area.json, «browser»); an existing .mcp.json without
+a «playwright» server is merged.
 
 Exit code: 0 if it generates (or dry-runs with no conflicts); 2 if there are conflicts or the answers are not valid; 1
 if something is missing from the plugin.
@@ -58,15 +61,35 @@ PLUGIN = HERE.parent.parent.parent
 VOCABULARY = "en"
 
 
+def browser_catalog():
+    """The «browser» entry of the catalog: package, pinned version, Chromium revision and areas."""
+    try:
+        b = json.loads(CATALOG.read_text(encoding="utf-8")).get("browser") or {}
+    except (OSError, ValueError):
+        b = {}
+    return b if isinstance(b, dict) else {}
+
+
+def mcp_server():
+    """The «playwright» server of the project's .mcp.json: Playwright's Chromium, a profile and an output per project."""
+    b = browser_catalog()
+    package = "%s@%s" % (b.get("package") or "@playwright/mcp", b.get("version") or "latest")
+    return {"type": "stdio", "command": "npx",
+            "args": ["-y", package, "--browser", "chromium", "--user-data-dir", ".playwright/profile",
+                     "--output-dir", ".playwright/output"]}
+
+
 def plugin_version():
     try:
         return str(json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")).get("version") or "")
     except (OSError, ValueError):
         return ""
 
-REQUIRED = ["project", "client", "org", "expiry", "approver", "autonomy"]
-TEXTS = REQUIRED + ["client_sources", "internal_only", "channels", "date", "language"]
-KNOWN = set(TEXTS) | {"areas", "profile"}
+REQUIRED = ["project", "client", "org", "expiry", "approver"]
+TEXTS = REQUIRED + ["autonomy", "profile", "client_sources", "internal_only", "channels", "date", "language"]
+KNOWN = set(TEXTS) | {"areas", "browser"}
+CATALOG = PLUGIN / "skills" / "sdd-method" / "scripts" / "skills-by-area.json"
+MCP = ".mcp.json"
 # Default answers: they end up in the generated files.
 DEFAULTS = {
     "areas": [],
@@ -120,21 +143,33 @@ def load_answers(answers):
         for a in areas:
             check_text(origin["areas"], a)
         data["areas"] = V.areas(areas)
-    missing = [k for k in REQUIRED if not str(data.get(k, "")).strip()]
+    data["profile"] = V.VALUES["profile"].get(data.get("profile") or "full", data.get("profile") or "full")
+    if data["profile"] not in V.PROFILES:
+        raise ValueError("profile must be %s, not \"%s\"" % (" or ".join(V.PROFILES), raw[origin["profile"]]))
+    if data["profile"] == "light":
+        given = V.VALUES["autonomy"].get(data.get("autonomy"), data.get("autonomy"))
+        if given not in (None, "", "critical"):
+            warnings.append("\"%s\" is \"%s\", and the light profile implies the critical autonomy: critical is used"
+                            % (origin["autonomy"], raw[origin["autonomy"]]))
+        data["autonomy"] = "critical"
+    missing = [k for k in REQUIRED + ["autonomy"] if not str(data.get(k, "")).strip()]
     if missing:
         raise ValueError("missing answers: " + ", ".join(missing))
     data["autonomy"] = V.VALUES["autonomy"].get(data["autonomy"], data["autonomy"])
     if data["autonomy"] not in V.AUTONOMIES:
         raise ValueError("autonomy must be %s, not \"%s\"" % (" or ".join(V.AUTONOMIES), raw[origin["autonomy"]]))
+    if "browser" in data and not isinstance(data["browser"], bool):
+        raise ValueError("\"%s\" must be true or false" % origin["browser"])
     r = dict(DEFAULTS)
     r.update({k: v for k, v in data.items() if v not in (None, "")})
     if "language" in r:
         r["language"] = r["language"].strip()
         if not r["language"]:
             del r["language"]
-    if r.pop("profile", None) is not None:
-        warnings.append("\"%s\" no longer exists (the light profile was retired): ignored, everything is generated"
-                        % origin["profile"])
+    r["mode"] = "light" if r["profile"] == "light" else r["autonomy"]  # what the templates' blocks choose by
+    if "browser" not in r:
+        ui = set(browser_catalog().get("areas") or [])
+        r["browser"] = bool(ui & set(r["areas"]))
     r["date"] = r.get("date") or datetime.date.today().isoformat()
     try:
         datetime.date.fromisoformat(r["date"])
@@ -149,7 +184,9 @@ def seed_name(r):
 
 
 def placeholders(r):
-    if r["autonomy"] == "critical":
+    if r["profile"] == "light":
+        escalation = "Only what is critical is escalated, with the light profile below"
+    elif r["autonomy"] == "critical":
         escalation = ("Only what is critical is escalated: user experience, approved requirements, stack or a "
                       "blocker; the orchestrator decides and records the rest")
     else:
@@ -160,7 +197,9 @@ def placeholders(r):
         "INTERNAL_ONLY": r["internal_only"], "CHANNELS": r["channels"], "ESCALATION": escalation,
         "AREAS": ", ".join(r["areas"]) or "to be decided in the discovery",
         "AUTONOMY": r["autonomy"], "VERSION": plugin_version() or "(no version)",
-        "LANGUAGE": r.get("language", ""), "SEED": seed_name(r),
+        "LANGUAGE": r.get("language", ""), "SEED": seed_name(r), "PROFILE": r["profile"],
+        "BROWSER_VERSION": "%s@%s" % (browser_catalog().get("package") or "@playwright/mcp",
+                                      browser_catalog().get("version") or "latest"),
     }
 
 
@@ -202,6 +241,8 @@ def plan(r):
           ("docs/client/.gitkeep", "empty", None),
           ("reviews/.gitkeep", "empty", None),
           ("sdd.config.json", "config", None)]
+    if r.get("browser"):
+        p.append((MCP, "mcp", None))
     return p
 
 
@@ -210,13 +251,16 @@ def content(kind, source, r, target_rel):
         return ""
     if kind == "copy":
         return source.read_text(encoding="utf-8")
+    if kind == "mcp":
+        return json.dumps({"mcpServers": {"playwright": mcp_server()}}, ensure_ascii=False, indent=2) + "\n"
     if kind == "config":
         # Minimal: the defaults of the checks live in the plugin scripts (sdd-method/scripts/).
         method = {"plugin": "sdd-salesforce", "version": plugin_version(), "approver": r["approver"],
-                  "autonomy": r["autonomy"], "vocabulary": VOCABULARY}
+                  "profile": r["profile"], "autonomy": r["autonomy"], "vocabulary": VOCABULARY}
         if r.get("language"):
             method["language"] = r["language"]
-        cfg = {"project": r["project"], "org_alias": r["org"], "areas": r["areas"], "method": method}
+        cfg = {"project": r["project"], "org_alias": r["org"], "areas": r["areas"], "method": method,
+               "environment": {"browser": bool(r.get("browser"))}}
         return json.dumps(cfg, ensure_ascii=False, indent=2) + "\n"
     return render(source.read_text(encoding="utf-8"), r, target_rel)
 
@@ -242,6 +286,21 @@ def merge_gitignore(current, new):
         return None
     sep = "" if current.endswith("\n") or not current else "\n"
     return current + sep + "\n# sdd-salesforce\n" + "\n".join(missing) + "\n"
+
+
+def merge_mcp(current):
+    """The project's .mcp.json with the «playwright» server added; None if it already has one, "" if it is not valid."""
+    try:
+        data = json.loads(current)
+    except ValueError:
+        return ""
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    if not isinstance(servers, dict):
+        return ""
+    if "playwright" in servers:
+        return None
+    servers["playwright"] = mcp_server()
+    return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
 
 def existing_seed(target):
@@ -277,6 +336,16 @@ def bootstrap(target, r, dry_run=False, add_missing=False, replace_readme=False)
             if merged is not None:
                 res["merge"].append(rel)
                 work.append((path, merged))
+        elif rel == MCP:
+            merged = merge_mcp(path.read_text(encoding="utf-8"))
+            if merged:
+                res["merge"].append(rel)
+                work.append((path, merged))
+            elif merged == "":
+                (res["skipped"] if add_missing else res["conflicts"]).append(rel)
+            elif json.loads(path.read_text(encoding="utf-8"))["mcpServers"]["playwright"] != mcp_server():
+                res["warnings"].append("%s already has a «playwright» server different from the pinned one (%s): it "
+                                       "is kept" % (rel, mcp_server()["args"][1]))
         elif rel == "README.md" and SFDX_README in path.read_text(encoding="utf-8") and replace_readme:
             res["replace"].append(rel)
             work.append((path, text))
@@ -351,6 +420,21 @@ _TRACE_HEAD = ("## P0 AC\n\n| Requirement | AC | Source and status | Step | Veri
                "|---|---|---|---|---|---|\n")
 _TRACE_ROWS = ("| R-ORD-01 | AC-ORD-01.1 | spec 001 · Ready | W1.1 | Apex test | planned |\n"
                "| R-ORD-01 | AC-ORD-01.2 | spec 001 · Ready | W1.1 | Apex test | planned |\n")
+# CA-LIG-01.6 and CA-NAV-01.5: a flat step of the light profile (no Size, waves or Test first) with a browser check.
+_FLAT_STEP = """### W1.1 — Order list page
+- **Satisfies:** R-ORD-01. **Source:** spec 001
+- **Touches:** `force-app/main/default/lwc/orderList/`
+- **Skill:** `experience-lwc-generate`
+- **Done when:** AC-ORD-01.1 browser check: given a user with orders, the list is shown.
+"""
+_FLAT_ROWS = ("| R-ORD-01 | AC-ORD-01.1 | spec 001 · Ready | W1.1 | browser check | planned |\n"
+              "| R-ORD-01 | AC-ORD-01.2 | spec 001 · Ready | W1.1 | browser check | planned |\n")
+_FLAT_REPORT = """# W1.1 — step report
+
+## Verification cases
+- AC-ORD-01.1 — browser check: as a user with orders, "My orders" shows the list (screenshot in evidence/W1.1/).
+- AC-ORD-01.2 — browser check: as a user without orders, the notice "No orders yet" is shown.
+"""
 _SCOPES_HEAD = "| Scope | Steps | Own folders and prefixes | Consumes | Exposes |\n|---|---|---|---|---|\n"
 _SCOPES_ROW = "| portal | W1.1 | `classes/Orders*` | — | — |\n"
 
@@ -392,10 +476,12 @@ def self_test():
             check(not (d1 / "docs/delivery-plan" / moved).exists(), "v0.2: %s is still in the project" % moved)
         # CA-VOC-01.1: English keys, method.vocabulary «en» and no language when it is not given (CA-IDI-01.5)
         cfg = json.loads((d1 / "sdd.config.json").read_text())
-        check(sorted(cfg) == ["areas", "method", "org_alias", "project"],
+        check(sorted(cfg) == ["areas", "environment", "method", "org_alias", "project"],
               "CA-VOC-01.1: unexpected keys in sdd.config.json: %s" % sorted(cfg))
+        check(cfg.get("environment") == {"browser": False} and not (d1 / MCP).exists(),
+              "CA-NAV-01.1: agentforce only, without «browser»: there is a .mcp.json or environment.browser is not false")
         check(cfg.get("method") == {"plugin": "sdd-salesforce", "version": plugin_version(), "approver": "Ann Smith",
-                                    "autonomy": "critical", "vocabulary": "en"},
+                                    "profile": "full", "autonomy": "critical", "vocabulary": "en"},
               "CA-VOC-01.1: unexpected method section: %s" % cfg.get("method"))
         check(V.vocabulary(cfg) == ("en", None), "CA-VOC-01.1: the config does not read as the «en» vocabulary")
         check(cfg.get("org_alias") == "acme-demo" and cfg.get("areas") == ["agentforce"] and cfg["project"] ==
@@ -462,11 +548,80 @@ def self_test():
         check("**Document language:** `es`" in (d6 / seed).read_text(), "CA-IDI-01.5: decision 001 does not record it")
         check("**Document language:** `es`" in (d6 / "CLAUDE.md").read_text(), "CA-IDI-01.5: CLAUDE.md does not say it")
         check(load_answers(dict(base, language="  ")).get("language") is None, "language: a blank one is kept")
-        # CA-BOOT-01.5: a single profile; «profile» in the answers is ignored with a warning
+        # CA-LIG-01.1: the light profile fixes critical, and CLAUDE.md and 001 say it; every template is still generated
+        d8 = tmp / "light"
+        r = load_answers(dict(base, profile="light", autonomy="strict"))
+        check(r["autonomy"] == "critical" and any("light profile implies" in w for w in r["warnings"]),
+              "CA-LIG-01.1: light with strict does not become critical with a warning")
+        bootstrap(d8, r)
+        cfg = json.loads((d8 / "sdd.config.json").read_text())
+        check(cfg["method"]["profile"] == "light" and cfg["method"]["autonomy"] == "critical",
+              "CA-LIG-01.1: sdd.config.json of a light project: %s" % cfg["method"])
+        check((d8 / "docs/delivery-plan/integration.md").exists(), "light: integration.md is missing")
+        claude, d001 = (d8 / "CLAUDE.md").read_text(), (d8 / seed).read_text()
+        check("**Profile:** `light`" in claude and "need no OK" in claude, "CA-LIG-01.1: CLAUDE.md does not say light")
+        check("Light profile:" in d001 and "Critical-only autonomy:" not in d001 and "Full profile" in d001,
+              "CA-LIG-01.1: decision 001 does not record the light profile")
+        check("Org versions" in (d8 / "docs/delivery-plan/status.md").read_text(),
+              "CA-LIG-01.1: status.md of a light project without its «Org versions» table")
+        check(load_answers(dict(base, autonomy=None, profile="ligero"))["autonomy"] == "critical",
+              "light: without autonomy it is not critical, or «ligero» is not accepted")
+        check("Light profile:" not in (d1 / seed).read_text() and "Org versions" not in
+              (d1 / "docs/delivery-plan/status.md").read_text(), "full: the light blocks slipped in")
+        try:
+            load_answers(dict(base, profile="lite"))
+            check(False, "profile: «lite» is accepted")
+        except ValueError:
+            pass
+        # CA-LIG-01.6 and CA-NAV-01.5: the flat plan passes without --graph, and browser check is read in the report
+        (d8 / "knowledge/specs/2026-11-05-001_orders.md").write_text(_SPEC, encoding="utf-8")
+        (d8 / "docs/delivery-plan/implementation/W1.md").write_text(_FLAT_STEP, encoding="utf-8")
+        t8 = (d8 / "docs/delivery-plan/traceability.md").read_text()
+        (d8 / "docs/delivery-plan/traceability.md").write_text(t8.replace(_TRACE_HEAD, _TRACE_HEAD + _FLAT_ROWS, 1),
+                                                               encoding="utf-8")
+        reports = d8 / V.traceability_defaults(VOCABULARY)["paths"]["step_reports"]
+        reports.mkdir(parents=True, exist_ok=True)
+        code, out = check_traceability(d8)
+        check(code == 0 and "ERROR" not in out, "CA-LIG-01.6: the flat plan gives errors without --graph:\n%s" % out)
+        (reports / "W1.1.md").write_text(_FLAT_REPORT.replace("- AC-ORD-01.2", "- (pending) AC-ORD-02.9"),
+                                         encoding="utf-8")
+        code, out = check_traceability(d8, "--step", "W1.1", "--no-review")
+        check(code != 0 and "AC-ORD-01.2" in out, "CA-NAV-01.5: a browser check not cited in the report passes:\n%s"
+              % out)
+        (reports / "W1.1.md").write_text(_FLAT_REPORT, encoding="utf-8")
+        code, out = check_traceability(d8, "--step", "W1.1", "--no-review")
+        check(code == 0, "CA-NAV-01.5: with the browser checks in the report, --step W1.1 exits with %d:\n%s"
+              % (code, out))
+        # CA-NAV-01.1: with a UI area (or browser true), .mcp.json with the pinned server and .playwright/ ignored
+        d9 = tmp / "browser"
+        r = load_answers(dict(base, areas=["lwc"]))
+        check(r["browser"] is True, "CA-NAV-01.1: a UI area does not propose the browser by default")
+        bootstrap(d9, r)
+        mcp = json.loads((d9 / MCP).read_text())["mcpServers"]["playwright"]
+        pinned = "%s@%s" % (browser_catalog()["package"], browser_catalog()["version"])
+        check(mcp["args"][1] == pinned and "chromium" in mcp["args"] and ".playwright/profile" in mcp["args"],
+              "CA-NAV-01.1: .mcp.json without the pinned server: %s" % mcp)
+        check(".playwright/" in (d9 / ".gitignore").read_text().splitlines(), "CA-NAV-01.1: .playwright/ is not ignored")
+        check(json.loads((d9 / "sdd.config.json").read_text())["environment"] == {"browser": True},
+              "CA-NAV-01.1: environment.browser is not true")
+        check("## Browser" in (d9 / "CLAUDE.md").read_text(), "CA-NAV-01.1: CLAUDE.md without its Browser section")
+        check(load_answers(dict(base, areas=["lwc"], browser=False))["browser"] is False, "browser: false is not kept")
+        # An existing .mcp.json without playwright is merged; with --add-missing in an older project, it is added
+        (d9 / MCP).write_text(json.dumps({"mcpServers": {"other": {"command": "x"}}}))
+        res = bootstrap(d9, r, add_missing=True)
+        merged = json.loads((d9 / MCP).read_text())["mcpServers"]
+        check(MCP in res["merge"] and "other" in merged and "playwright" in merged,
+              "browser: an existing .mcp.json is not merged: %s" % res)
+        res = bootstrap(d9, r, add_missing=True)
+        check(MCP not in res["merge"] + res["conflicts"], "browser: a .mcp.json with playwright is touched again")
+        try:
+            load_answers(dict(base, browser="yes"))
+            check(False, "browser: a text is accepted")
+        except ValueError:
+            pass
+        # The strict autonomy (full profile)
         d2 = tmp / "with-profile"
-        res = bootstrap(d2, load_answers(dict(base, profile="light", autonomy="strict")))
-        check(any("profile" in a for a in res["warnings"]), "profile: no warning about the retired key")
-        check((d2 / "docs/delivery-plan/integration.md").exists(), "profile: integration.md is missing")
+        res = bootstrap(d2, load_answers(dict(base, profile="full", autonomy="strict")))
         d001 = (d2 / seed).read_text()
         check("Strict autonomy:" in d001 and "Critical-only autonomy:" not in d001,
               "strict: the strict autonomy block is missing")
@@ -474,12 +629,11 @@ def self_test():
         # Answers of 0.2 and 0.3: Spanish keys and values are aliases
         legacy = {"proyecto": "Order portal", "cliente": "ACME", "org": "acme-demo", "caducidad": "2026-12-31",
                   "aprobador": "Ann Smith", "autonomia": "estricta", "areas": ["voz"], "fecha": "2026-11-05",
-                  "idioma": "es", "perfil": "ligero"}
+                  "idioma": "es", "perfil": "completo"}
         r = load_answers(legacy)
         check(r["autonomy"] == "strict" and r["areas"] == ["voice"] and r["language"] == "es"
-              and r["project"] == "Order portal" and r["date"] == "2026-11-05",
+              and r["project"] == "Order portal" and r["date"] == "2026-11-05" and r["profile"] == "full",
               "legacy: Spanish answers not translated: %s" % r)
-        check(any("perfil" in w for w in r["warnings"]), "legacy: no warning about «perfil»")
         d7 = tmp / "legacy"
         bootstrap(d7, r)
         cfg = json.loads((d7 / "sdd.config.json").read_text())

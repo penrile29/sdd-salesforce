@@ -24,7 +24,8 @@ every change follows its own path so that the spec keeps describing the system.
   separate context), `create-spec`, `create-decision`, `create-gotcha`, `read-knowledge` and this one, `sdd-help`.
 - **Hooks:** when a session starts in a method project (or at its first message, if the project was bootstrapped in
   it), they inject its rules and the project's data; before each command, they stop an `sf` command from touching any
-  org other than the project's and ask for confirmation before publishing or activating an agent.
+  org other than the project's and ask for confirmation before publishing or activating an agent (not with the light
+  profile); before each browser tool, they stop the browser from opening another customer's org.
 - **Scripts:** the environment verification (skills, tools and the org's API) and the traceability check.
 
 **It does not install**, and the method needs them: the sf-skills (`forcedotcom/sf-skills`), the ADLC plugin
@@ -32,7 +33,8 @@ every change follows its own path so that the spec keeps describing the system.
 verification says what is missing.
 
 **In each project**, only when it is bootstrapped with `sdd-bootstrap` (about 20 files): a short `CLAUDE.md` with the
-org, the approver, the autonomy and confidentiality; `sdd.config.json`; `knowledge/` (discovery, specs, decisions,
+org, the approver, the profile (full or light), the autonomy and confidentiality; `.mcp.json` with the Playwright
+browser, if UI tests are planned; `sdd.config.json`; `knowledge/` (discovery, specs, decisions,
 with adoption decision 001, and gotchas); `docs/delivery-plan/` (status with the change queue, handover, questions,
 delivery plan, integration and traceability); `docs/baseline/`, `docs/client/` (outside git) and `reviews/`; and
 local git.

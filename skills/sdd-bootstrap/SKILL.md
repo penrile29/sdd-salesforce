@@ -1,6 +1,6 @@
 ---
 name: sdd-bootstrap
-description: "Bootstraps a Salesforce project with the sdd-salesforce method: a short interview, then it generates a short CLAUDE.md with the project's data, sdd.config.json, adoption decision 001, knowledge/, docs/delivery-plan/ (status, change queue, handover, questions, plan and traceability) and local git. The method's rules and scripts stay in the plugin. Use it when someone wants to start, set up or bootstrap a Salesforce project, POC, demo or RFP (an empty folder or one just created with sf project generate, without sdd.config.json), even if they do not name the method or the skill."
+description: "Bootstraps a Salesforce project with the sdd-salesforce method: a short interview (with the full or light profile and the browser for tests), then it generates a short CLAUDE.md with the project's data, sdd.config.json, adoption decision 001, knowledge/, docs/delivery-plan/ (status, change queue, handover, questions, plan and traceability), the project's Playwright MCP (.mcp.json) and local git. The method's rules and scripts stay in the plugin. Use it when someone wants to start, set up or bootstrap a Salesforce project, POC, demo or RFP (an empty folder or one just created with sf project generate, without sdd.config.json), even if they do not name the method or the skill."
 ---
 
 # sdd-bootstrap
@@ -44,14 +44,35 @@ options, use questions with options.
 | `org` | Alias of the integration org | From the local `.sf/config.json`, if it exists. A different one per POC |
 | `expiry` | When the org expires | Once the alias is confirmed, read it with the `dx-org-trial-expiration-check` skill (it queries `TrialExpirationDate` with SOQL; for a scratch org, `sf org list`). If it is not there or not known, "to be confirmed" |
 | `approver` | Who approves the gates and the release | A name: it will appear in the decisions |
-| `autonomy` | `strict` (human OK at every gate, including each Execution step) or `critical` (only what is critical is escalated; the gate for each step is the reviewer's verdict) | Recommend `strict` if it is their first time with the method |
+| `profile`, `autonomy` | **One question, three options**, each explained in two or three lines (section "Profile and autonomy" below): **Full, OK at every step** (`profile: full`, `autonomy: strict`), **Full, critical only** (`profile: full`, `autonomy: critical`) or **Light** (`profile: light`; the autonomy is `critical`) | Recommend full with `strict` if it is their first time with the method, and light for a demo with little risk and a short deadline |
 | `areas` | Salesforce pieces planned | Options: the keys of `areas` in `${CLAUDE_SKILL_DIR}/../sdd-method/scripts/skills-by-area.json`; they can be left empty and set in the discovery |
 | `client_sources` | Which client sources there will be in `docs/client/` | A description only, no content |
 | `internal_only` | Which material is internal only (competitors, product direction…) | |
 | `channels` | Allowed external channels (Slack, email, Support…) | Every message sent will still need the approver's OK |
+| `browser` | Whether they will test in the browser (`true` or `false`) | Propose `true` if an area is in `browser.areas` of the catalog (UI: Lightning pages, LWC, sites, React, messaging). With `true`, the project gets its `.mcp.json` with Playwright (section "Browser" below) |
 | `language` | Language of the project's documents | Ask **only** if it is not clear from the conversation (for example, the user writes in Spanish and the client's documents are in Spanish: `es`). A short code such as `es` or `en`. If in doubt and they do not answer, leave it out: the documents then follow the user's language |
 
 Write the answers to a JSON file in the scratchpad (not in the project), with these keys.
+
+### Profile and autonomy
+Explain the three options in the user's language before they choose, more or less like this:
+- **Full, OK at every step:** the whole method, and you approve the diff of every step before it is deployed. The most
+  control and the slowest; the recommended way to learn the method.
+- **Full, critical only:** the whole method (waves, test-first, review of the spec and the plan, OK before publishing
+  and activating an agent), but between steps Claude only stops for what is critical.
+- **Light:** the same three gates (Plan, Design, release) and the spec with requirements and AC, with less ceremony: a
+  flat delivery plan, authors in parallel with a reviewer per step, no test-first, and deploy, publish and activate in
+  the project's org without asking. External messages and irreversible settings still need your OK. Good for demos.
+It can be changed before the Plan gate and, after it, with a decision.
+
+### Browser
+With `browser: true`, `bootstrap.py` writes `.mcp.json` with the Playwright MCP pinned in the catalog (its own
+Chromium, profile and output in `.playwright/`, which is not versioned). Then:
+- if `check-environment.py --quick` says that Chromium is missing, propose the command it gives
+  (`npx -y @playwright/mcp@<version> install-browser chromium --no-shell`): say that it downloads Chromium from
+  Playwright's CDN and run it only with the user's OK;
+- tell the user that the MCP appears when they open a new session in the project, that Claude Code asks them to
+  approve it the first time, and that they log in to the org by hand in the Chromium window. You never type passwords.
 
 ## 3. Generate
 1. **Dry-run** and show the result:
@@ -90,6 +111,7 @@ session in the target; there, saying "start" is enough. What follows then applie
 - Say what only the user can do:
   - if there is no login to the org, `sf org login web --alias <org>` and `sf config set target-org <org>` inside the
     target;
+  - with the browser, approve the project's MCP and log in to the org in Chromium (section "Browser" above);
   - copy the client's sources into `docs/client/` (it is not versioned).
 - Close with **one** question: whether you should start the **Plan** once that is ready (it starts with the full
   environment verification and goes on with the discovery, which ends at the Plan gate). If the user says yes, start

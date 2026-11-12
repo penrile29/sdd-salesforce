@@ -48,6 +48,14 @@ or accepted. `check-traceability.py` reads the "State" column.
 ## File reservations
 None.
 
+<!-- if profile=light -->
+## Org versions
+Light profile: deploy, publish and activate need no OK. Each activated version and the previous one, to roll back.
+
+| Date | Step | What was deployed or activated (agent and version) | Previous version | Verification |
+|---|---|---|---|---|
+
+<!-- end if -->
 ## Changes in the org outside the code
 
 | Date | Change | Who / how | Verification |

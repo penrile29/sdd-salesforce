@@ -9,7 +9,8 @@
     "skill_names": "Bare ('platform-soql-query'): looked up in every layer (project, parent, user, plugins). With a plugin ('agentforce-adlc:agentforce-generate'): it only counts if it comes from that plugin; a standalone copy does not replace it.",
     "criterion": "Each area lists only what is needed to build and verify that piece, plus the area's coordination skill if there is one. Missing related skills (metadata.relatedSkills) show up as a warning, not as an error.",
     "areas_outside_the_catalog": "A declared area that is not here is looked up in metadata.domains of the frontmatter of the installed skills, ignoring case, spaces and hyphens ('consumer-goods' = 'Consumer Goods'). It is flagged for review by hand.",
-    "config_example": "sdd.config.json of the project: {\"project\": \"acme\", \"org_alias\": \"acme-demo\", \"areas\": [\"agentforce\", \"flow\"], \"environment\": {\"inventory\": \"docs/baseline/environment.json\", \"extra_skills\": [\"platform-data-manage\"], \"excluded_skills\": []}}"
+    "config_example": "sdd.config.json of the project: {\"project\": \"acme\", \"org_alias\": \"acme-demo\", \"areas\": [\"agentforce\", \"flow\"], \"environment\": {\"inventory\": \"docs/baseline/environment.json\", \"extra_skills\": [\"platform-data-manage\"], \"excluded_skills\": []}}",
+    "browser": "Browser for UI tests (rule M-12): the Playwright MCP that sdd-bootstrap writes into the project's .mcp.json. package and version are pinned on purpose: each version of @playwright/mcp asks for its own Chromium revision (chromium_revision). areas: the areas where the browser is proposed and checked; tools: what it needs on the machine. When the version is raised, update chromium_revision with the one its playwright-core asks for (browsers.json)."
   },
   "sf_skills_release": "1.66.0",
   "method_plugin": "sdd-salesforce",
@@ -42,6 +43,22 @@
       "sf",
       "git",
       "python3"
+    ]
+  },
+  "browser": {
+    "package": "@playwright/mcp",
+    "version": "0.0.83",
+    "chromium_revision": "1247",
+    "areas": [
+      "ui-lightning",
+      "lwc",
+      "lwr-site",
+      "ui-bundle-react",
+      "messaging-channels"
+    ],
+    "tools": [
+      "node",
+      "npx"
     ]
   },
   "areas": {

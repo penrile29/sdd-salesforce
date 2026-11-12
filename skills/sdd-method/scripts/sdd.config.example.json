@@ -150,6 +150,10 @@
         "type": "report"
       },
       {
+        "label": "browser check",
+        "type": "report"
+      },
+      {
         "label": "demo step",
         "type": "demo"
       },

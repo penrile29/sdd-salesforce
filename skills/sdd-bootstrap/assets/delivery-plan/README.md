@@ -14,6 +14,11 @@ tags: [plan, waves]
 ## Goal, sources and scope
 <Observable goal, the specs and decisions the plan comes from, and what is left out.>
 
+<!-- if profile=light -->
+> **Light profile:** a flat list of steps `W1.n` in `implementation/W1.md` (one wave), each with `Satisfies`,
+> `Touches`, `Skill` and, if there is one, `Depends on`; the waves table below does not apply.
+
+<!-- end if -->
 ## Waves
 
 | Wave | Outcome | Steps |

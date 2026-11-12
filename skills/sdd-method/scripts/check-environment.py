@@ -553,11 +553,20 @@ def tool_version(name):
     return res
 
 
-def query_org_api(alias):
+def my_domain_of(instance_url):
+    """The My Domain name of an org («acme-dev-ed» for https://acme-dev-ed.develop.my.salesforce.com), or None. A
+    sandbox keeps its suffix («acme--uat»): it is another org than production."""
+    m = re.match(r'https?://([^/:]+)', str(instance_url or ''))
+    if not m or '.' not in m.group(1):
+        return None
+    return m.group(1).lower().split('.', 1)[0] or None
+
+
+def query_org_api(alias, details=None):
     """Org API with `sf org display --target-org <alias> --json`. Returns (version | None, note).
 
     The output of that command includes the org access token: it is neither printed nor saved;
-    only result.apiVersion is extracted.
+    only result.apiVersion and the My Domain name of result.instanceUrl (into details['my_domain']) are extracted.
     """
     if not alias:
         return None, 'org_alias is missing from sdd.config.json'
@@ -576,7 +585,64 @@ def query_org_api(alias):
         msg = str(d.get('message') or d.get('name') or 'error with no message')
         return None, 'sf org display --target-org %s failed: %s' % (alias, msg[:200])
     v = (d.get('result') or {}).get('apiVersion')
+    if details is not None:
+        details['my_domain'] = my_domain_of((d.get('result') or {}).get('instanceUrl'))
     return (str(v), '') if v else (None, 'sf org display returned no apiVersion')
+
+
+def playwright_cache(home, explicit_home):
+    """Folder of Playwright's browsers: PLAYWRIGHT_BROWSERS_PATH (not in tests) or the default one of the system."""
+    if not explicit_home and os.environ.get('PLAYWRIGHT_BROWSERS_PATH') not in (None, '', '0'):
+        return os.path.expanduser(os.environ['PLAYWRIGHT_BROWSERS_PATH'])
+    if sys.platform == 'darwin':
+        return os.path.join(home, 'Library', 'Caches', 'ms-playwright')
+    if sys.platform.startswith('win'):
+        return os.path.join(home, 'AppData', 'Local', 'ms-playwright')
+    return os.path.join(home, '.cache', 'ms-playwright')
+
+
+def browser_gaps(project, home, browser, explicit_home=False):
+    """(errors, warnings, inventory entry) of the browser requirement (rule M-12): the project's .mcp.json with the
+    pinned Playwright MCP and the Chromium revision it needs."""
+    errors, warnings = [], []
+    package = '%s@%s' % (browser.get('package') or '@playwright/mcp', browser.get('version') or 'latest')
+    revision = str(browser.get('chromium_revision') or '')
+    install = 'npx -y %s install-browser chromium --no-shell' % package
+    entry = OrderedDict([('mcp', package), ('mcp_json', 'missing'), ('chromium_revision', revision or None),
+                         ('chromium', 'not_checked')])
+    path = os.path.join(project, '.mcp.json')
+    server = None
+    try:
+        data = _read_json(path)
+        server = ((data.get('mcpServers') or {}) if isinstance(data, dict) else {}).get('playwright')
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError) as e:
+        errors.append('Browser: .mcp.json cannot be read (%s).' % e)
+    if server is None:
+        if not errors:
+            errors.append('Browser: the project has no .mcp.json with the «playwright» server (rule M-12). Run '
+                          'sdd-bootstrap with --add-missing, which creates it with %s, or set environment.browser to '
+                          'false in sdd.config.json if this project does not test in the browser.' % package)
+    else:
+        args = server.get('args') if isinstance(server, dict) else None
+        args = args if isinstance(args, list) else []
+        if package in args:
+            entry['mcp_json'] = 'present'
+        else:
+            entry['mcp_json'] = 'other_version'
+            warnings.append('Browser: the «playwright» server of .mcp.json is not the pinned %s (%s): its Chromium '
+                            'revision may not be %s.' % (package, ' '.join(str(a) for a in args[:3]) or '?',
+                                                         revision or '?'))
+    if revision:
+        cache = playwright_cache(home, explicit_home)
+        if os.path.isdir(os.path.join(cache, 'chromium-' + revision)):
+            entry['chromium'] = 'present'
+        else:
+            entry['chromium'] = 'missing'
+            errors.append('Browser: Playwright\'s Chromium %s is not in %s. Install it, with the user\'s OK (it '
+                          'downloads from Playwright\'s CDN): %s' % (revision, cache, install))
+    return errors, warnings, entry
 
 
 # ---------------------------------------------------------------------------
@@ -1000,7 +1066,7 @@ def _python_hint(rng):
 
 
 CONFIG_KEYS = {'project', 'org_alias', 'areas', 'environment', 'traceability', 'method', 'dev_hub'}
-ENVIRONMENT_KEYS = {'inventory', 'extra_skills', 'excluded_skills'}
+ENVIRONMENT_KEYS = {'inventory', 'extra_skills', 'excluded_skills', 'browser'}
 
 
 def _check_catalog_shape(catalog, path):
@@ -1017,6 +1083,12 @@ def _check_catalog_shape(catalog, path):
     for k in ('skills', 'tools'):
         if not isinstance(base.get(k, []), list):
             bad('«base.%s» must be a list' % k)
+    browser = catalog.get('browser', {})
+    if not isinstance(browser, dict):
+        bad('«browser» must be an object')
+    for k in ('areas', 'tools'):
+        if not isinstance(browser.get(k, []), list):
+            bad('«browser.%s» must be a list' % k)
     areas = catalog.get('areas', {})
     if not isinstance(areas, dict):
         bad('«areas» must be an object')
@@ -1156,6 +1228,30 @@ def check(args):
                              ', '.join(sorted(v['domain'] for v in domains.values())) or 'none'))
     if not areas:
         warnings.append('No areas declared («areas» in sdd.config.json or --areas): only the base is checked.')
+
+    # -- Browser (rule M-12): environment.browser or, without it, an area of browser.areas -----------
+    bcat = catalog.get('browser') or {}
+    wants = env_cfg.get('browser')
+    if not isinstance(wants, bool):
+        # A project from before 0.5 has no environment.browser: nothing breaks. The browser is required if it already
+        # has the «playwright» server; with UI areas and without it, a warning says how to add it.
+        try:
+            mcp = _read_json(os.path.join(project, '.mcp.json'))
+            wants = isinstance(mcp, dict) and 'playwright' in (mcp.get('mcpServers') or {})
+        except (OSError, ValueError, AttributeError):
+            wants = False
+        ui = sorted(set(bcat.get('areas') or []) & set(areas_used))
+        if not wants and ui and bcat:
+            warnings.append('Browser: the project has UI areas (%s) and no browser for its tests (rule M-12). To add '
+                            'it, run sdd-bootstrap with --add-missing, which writes .mcp.json, and set '
+                            'environment.browser to true in sdd.config.json.' % ', '.join(ui))
+    browser_entry = None
+    if wants and bcat:
+        for t in bcat.get('tools') or []:
+            request(t, '*', 'browser')
+        b_errors, b_warnings, browser_entry = browser_gaps(project, home, bcat, explicit_home=bool(args.home))
+        errors.extend(b_errors)
+        warnings.extend(b_warnings)
 
     if not args.quick:
         for n in _as_list(env_cfg.get('extra_skills')):
@@ -1310,14 +1406,14 @@ def check(args):
     for v, _ in api_reqs:
         if required_api is None or _cmp(_vtuple(v), _vtuple(required_api)) > 0:
             required_api = v
-    org_api, api_source = None, ''
+    org_api, api_source, org_details = None, '', {}
     if args.api_org:
         org_api, api_source = args.api_org.strip(), '--api-org'
         if args.query_org:
             warnings.append('--api-org was given: the org is not queried (--query-org ignored).')
     elif args.query_org:
         alias = str(config.get('org_alias') or '').strip()
-        org_api, note = query_org_api(alias)
+        org_api, note = query_org_api(alias, org_details)
         api_source = 'sf org display --target-org %s' % alias if alias else ''
         if org_api is None:
             errors.append('Could not read the org API with --query-org: %s.' % note)
@@ -1385,6 +1481,26 @@ def check(args):
         (h['name'], OrderedDict([('required', h['required']), ('installed', h['installed']), ('state', h['state'])]))
         for h in tool_rows)
     inventory['org_api'] = OrderedDict([('required', required_api), ('org', org_api), ('state', api_state)])
+    # The My Domain is what the browser guard compares; without a new query, that of the previous inventory is kept.
+    rel_inv = str(env_cfg.get('inventory') or V.INVENTORY_PATH[vocab])
+    previous = {}
+    try:
+        previous = _read_json(rel_inv if os.path.isabs(rel_inv) else os.path.join(project, rel_inv))
+        previous = previous.get('org') if isinstance(previous, dict) and isinstance(previous.get('org'), dict) else {}
+    except (OSError, ValueError):
+        previous = {}
+    alias_now = str(config.get('org_alias') or '').strip()
+    kept = previous.get('my_domain') if str(previous.get('alias') or '').strip() == alias_now else None
+    my_domain = org_details.get('my_domain') or kept
+    inventory['org'] = OrderedDict([('alias', str(config.get('org_alias') or '').strip() or None),
+                                    ('my_domain', my_domain or None)])
+    if browser_entry is not None:
+        inventory['browser'] = browser_entry
+    # Light profile (rule M-11): the gaps are warnings that the approver sees at the Plan gate.
+    light = V.profile(config.get('method') if isinstance(config.get('method'), dict) else {}) == 'light'
+    if light and errors:
+        warnings.extend('Gap (light profile: a warning; record it in questions.md): %s' % e for e in errors)
+        errors = []
 
     res = {
         'project': project, 'home': home, 'environment': env, 'catalog': catalog_path,
@@ -1396,6 +1512,7 @@ def check(args):
                 'who': api_reqs},
         'errors': errors, 'warnings': warnings, 'inventory': inventory, 'files': [],
     }
+    res['light'] = light
     res['exit_code'] = 1 if errors and not args.quick else 0
 
     if not args.quick and not args.no_write:
@@ -1659,7 +1776,10 @@ _TEST_CATALOG = {
         'shadowed': {'description': 'shadowed', 'skills': ['skill-dup']},
         'tools': {'description': 'tools', 'skills': ['skill-tools']},
         'api': {'description': 'api', 'skills': ['skill-api']},
+        'ui': {'description': 'ui', 'skills': ['base-one']},
     },
+    'browser': {'package': '@playwright/mcp', 'version': '0.0.1', 'chromium_revision': '1', 'areas': ['ui'],
+                'tools': []},
 }
 
 _ADLC = ['agentforce-generate', 'agentforce-test', 'agentforce-observe']
@@ -1932,7 +2052,7 @@ def self_test(out):
         js = os.path.join(proj, 'docs', 'baseline', 'environment.json')
         inv = _read_json(js) if os.path.isfile(js) else {}
         ok(os.path.isfile(md) and SOURCE_OF_TRUTH_NOTE in open(md, encoding='utf-8').read() and
-           list(inv) == ['generated', 'areas', 'skills', 'agents', 'tools', 'org_api'] and
+           list(inv) == ['generated', 'areas', 'skills', 'agents', 'tools', 'org_api', 'org'] and
            set(inv['skills']['base-one']) == {'state', 'layer', 'path', 'version', 'needed_by'},
            'outputs', 'writes environment-<date>.md with the note and environment.json with the fixed format')
         _write(os.path.join(proj, 'sdd.config.json'),
@@ -1974,7 +2094,58 @@ def self_test(out):
         else:
             ok(True, 'CA-ENV-02.1', 'the script does not run from a plugin: not tested')
 
+        # -- CA-NAV-01.2: browser in a UI area; CA-LIG-01.5: in light, gaps are warnings ---------
+        ok(my_domain_of('https://acme-dev-ed.develop.my.salesforce.com') == 'acme-dev-ed' and
+           my_domain_of('https://ACME--uat.sandbox.my.salesforce.com/') == 'acme--uat' and my_domain_of('') is None,
+           'CA-NAV-01.3', 'My Domain name from instanceUrl')
+        home, proj, cat = scenario()
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0')
+        ok(r['exit_code'] == 0 and 'browser' not in r['inventory'] and
+           any(w.startswith('Browser: the project has UI areas') for w in r['warnings']), 'CA-NAV-01.2',
+           'a 0.4 project (no environment.browser) with a UI area: a warning, exit code 0 (review round 14, F-002)')
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'environment': {'browser': True}}))
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0')
+        ok(r['exit_code'] == 1 and any('.mcp.json' in e and '--add-missing' in e for e in r['errors']) and
+           any('install-browser chromium' in e for e in r['errors']), 'CA-NAV-01.2',
+           'UI area without .mcp.json or Chromium: two errors with the command that fixes each one')
+        _write(os.path.join(proj, '.mcp.json'), json.dumps({'mcpServers': {'playwright': {
+            'command': 'npx', 'args': ['-y', '@playwright/mcp@0.0.1', '--browser', 'chromium']}}}))
+        os.makedirs(os.path.join(playwright_cache(home, True), 'chromium-1'))
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0')
+        ok(r['exit_code'] == 0 and r['inventory']['browser']['mcp_json'] == 'present' and
+           r['inventory']['browser']['chromium'] == 'present', 'CA-NAV-01.2', 'control: with both, exit code 0')
+        h2, p2, c2 = scenario()
+        r = run(h2, p2, c2, '--areas', 'agentforce,tools', '--api-org', '66.0')
+        ok('browser' not in r['inventory'] and not any(w.startswith('Browser') for w in r['warnings']), 'CA-NAV-01.2',
+           'without a UI area or .mcp.json, the browser is not checked')
+        home, proj, cat = scenario()
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'environment': {'browser': False}}))
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0')
+        ok(r['exit_code'] == 0 and not any('Browser' in e for e in r['errors']), 'CA-NAV-01.2',
+           'environment.browser false: not required')
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'method': {'profile': 'light'},
+                                                                  'environment': {'browser': True}}))
+        r = run(home, proj, cat, '--areas', 'ui')
+        ok(r['exit_code'] == 0 and not r['errors'] and r['light'] and
+           sum(w.startswith('Gap (light profile') for w in r['warnings']) >= 3, 'CA-LIG-01.5',
+           'light: the browser gaps and the unchecked API are warnings, exit code 0')
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'method': {'profile': 'full'},
+                                                                  'environment': {'browser': True}}))
+        r = run(home, proj, cat, '--areas', 'ui')
+        ok(r['exit_code'] == 1 and len(r['errors']) >= 3, 'CA-LIG-01.5', 'control: in full they are errors')
+        js = os.path.join(proj, 'docs', 'baseline', 'environment.json')
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'org_alias': 'acme-demo'}))
+        _write(js, json.dumps({'org': {'alias': 'acme-demo', 'my_domain': 'acme-dev-ed'}}))
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0', write=True)
+        ok(_read_json(js)['org']['my_domain'] == 'acme-dev-ed', 'CA-NAV-01.3',
+           'without a new query, the My Domain of the previous inventory is kept')
+        _write(os.path.join(proj, 'sdd.config.json'), json.dumps({'org_alias': 'other-demo'}))
+        r = run(home, proj, cat, '--areas', 'ui', '--api-org', '66.0', write=True)
+        ok(_read_json(js)['org']['my_domain'] is None, 'CA-NAV-01.3',
+           'with another org_alias, the previous My Domain is not kept (review round 14, F-004)')
+
         # -- Org safety ------------------------------------------------------------------------
+        home, proj, cat = scenario()
         before = len(COMMANDS_RUN)
         r = run(home, proj, cat, '--query-org')
         ok(any('org_alias' in e for e in r['errors']) and

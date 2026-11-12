@@ -1,6 +1,6 @@
 ---
 name: sdd-method
-description: "Rules of the sdd-salesforce method in a project with sdd.config.json: the Plan → Design → Execution → Review cycle with its gates, roles, Definition of Done, escalation, communication, language, guided conversation, environment verification and change requests (changes after the Design gate). Use it when starting work in an sdd project, when moving to another stage, before a change after the Design gate and to run the environment and traceability checks; also when, in an sdd project, the user says “start”, “continue”, “where are we?”, “I approve”, “there is a bug in…”, “change this requirement or AC” or “record this”, even if they do not name the skill."
+description: "Rules of the sdd-salesforce method in a project with sdd.config.json: the Plan → Design → Execution → Review cycle with its gates, roles, Definition of Done, escalation, communication, language, guided conversation, environment verification, change requests (changes after the Design gate), the full and light profiles, parallel orchestration with subagents and the browser for tests. Use it when starting work in an sdd project, when moving to another stage, before a change after the Design gate and to run the environment and traceability checks; also when, in an sdd project, the user says “start”, “continue”, “where are we?”, “I approve”, “there is a bug in…”, “change this requirement or AC” or “record this”, even if they do not name the skill."
 ---
 
 # sdd-method
@@ -11,8 +11,9 @@ and its knowledge. The plugin injects the core at the start of every session, wh
 compacted, and in the first message of a session that does not have it yet (for example, the bootstrap session); the
 rest is read here when moving to another stage.
 
-**Project data:** the org is the `org_alias` in `sdd.config.json`; the approver, `method.approver`; the autonomy,
-`method.autonomy` (`strict` or `critical`); the document language, `method.language`. If the project's `CLAUDE.md`
+**Project data:** the org is the `org_alias` in `sdd.config.json`; the approver, `method.approver`; the profile, `method.profile`
+(`full` or `light`; without it, `full`); the autonomy, `method.autonomy` (`strict` or `critical`; `light` implies
+`critical`); the document language, `method.language`. If the project's `CLAUDE.md`
 says something different from a `CLAUDE.md` in a parent folder, the project's own wins within the project, and these
 rules prevail over both in matters of method.
 
@@ -20,9 +21,10 @@ rules prevail over both in matters of method.
 **sdd-salesforce method: what always applies in this project.**
 - **Org:** only the `org_alias` in `sdd.config.json`. Every `sf` command that touches an org carries an explicit
   `--target-org <alias>` (the default org may belong to another project) and `--json`. Draft-first: `validate` and
-  `preview` before `publish` and `activate`, which only happen at release. The plugin's guard denies Bash `sf`
-  commands against another org or without `--target-org`; it does not see scripts that call `sf` or MCP tools: with
-  those, check the org yourself.
+  `preview` before `publish` and `activate`, which only happen at release (in a light project, when the step is
+  integrated: light block). The plugin's guard denies Bash `sf` commands against another org or without
+  `--target-org`, and its browser guard denies other orgs in the Playwright MCP; neither sees scripts that call `sf` or
+  other MCP tools: with those, check the org yourself.
 - **Cycle:** Plan → Design → Execution → Review, without skipping stages or merging gates. These always need the
   approver's OK: the Plan gate, the Design gate, the release, irreversible settings and every external message (Slack,
   email, Support, the customer). Everything else depends on `method.autonomy`.
@@ -46,8 +48,43 @@ rules prevail over both in matters of method.
   `sdd.config.json` (if it is not set, in the user's language) and state it in every subagent brief. Headings and
   fields the checks read, IDs, git tags and file names stay exactly as in the project's templates: translate the
   prose, never those tokens (rule M-10).
+- **Profile:** `method.profile`. In a `light` project the plugin injects, after this core, the light block of this
+  skill: it wins where it differs. Without the key, the project is `full`.
+- **Browser:** to see the UI in tests, only the Playwright MCP of the project (`.mcp.json`, server `playwright`) with
+  its own Chromium, and only against the project's org (section "Browser"). Never the managed Chrome, the Browser pane
+  or Claude in Chrome. The user logs in by hand; you never type passwords.
 - When you start a stage or a change, read the whole `sdd-method` skill.
 <!-- /core -->
+
+<!-- light -->
+**Light profile (`method.profile: light`): what changes in this project.** It wins over the core and over the rest of
+this skill where they differ; everything else applies as it is.
+- **Gates:** Plan, Design and release keep the approver's OK and their tags. The gate of each Execution step is the
+  reviewer's verdict (`no_blocking_findings`): you report and carry on. The autonomy is `critical`.
+- **Org:** deploying, `sf agent publish` and `sf agent activate` against the project's org need no OK: do them when the
+  step is integrated, and record in `status.md` each version activated and the previous one, to roll back. The release
+  gate is "demo accepted": the approver validates the demo walkthrough, and the tag `release-N` is set. **Still with the
+  approver's OK:** every external message and every irreversible org setting (closed list in `references/rules.md`,
+  M-11). Any other org is still denied.
+- **Plan:** the environment verification runs as in full, but its gaps are warnings that go into `questions.md` and the
+  approver sees them at the Plan gate. Discovery: the customer's sources and a minimal snapshot of the org;
+  documentation and Slack only when a question needs them.
+- **Design:** requirements with IDs and AC in the spec (`create-spec`), as always; the design part, brief. Decisions
+  only for a stack, product or licence choice, an irreversible setting or a departure from the method, with "Verified
+  with" in one line. No independent review of the spec and the plan before the Design gate. The delivery plan is a
+  **flat list** of steps `W1.n` (one wave), each with `Satisfies`, `Touches`, `Skill` and, if there is one,
+  `Depends on`; no sizes or critical path (`--graph` is not used).
+- **Execution:** parallel orchestration with subagents (section "Parallel orchestration"): authors in their own
+  worktrees, one reviewer per step and serial integration. No test-first: the tests the deployment requires (Apex
+  coverage) and the agent cases of the demo walkthrough. The step report only has `## Verification cases`, with the
+  evidence.
+- **Change requests:** levels 0 to 2 write the delta and the code in the same commit, without "Approval: pending";
+  level 3 goes back to the approver.
+- **Handover:** only when the conversation is compacted or at the end of the working day, not at each gate.
+- **Definition of Done:** deployment without errors; preview with the traces of the demo script; `browser check` of the
+  UI AC; (agents) the security review without BLOCK findings; the traceability check without errors; and the demo
+  walkthrough run in Chromium.
+<!-- /light -->
 
 ## Cycle and gates
 
@@ -143,6 +180,7 @@ In Agentforce, the ADLC subagents: `adlc-author` and `adlc-engineer` (author), `
 - the relevant tests pass (`sf apex run test --code-coverage`, `sf agent test`);
 - the preview with `--use-live-actions` confirms the behaviour, with the traces reviewed;
 - (agents) the security review has no BLOCK findings;
+- (UI) the UI AC have their `browser check` in Chromium (section "Browser");
 - every AC in scope has its verification and the traceability check ends without errors;
 - the diff is reviewed and approved.
 
@@ -154,8 +192,60 @@ In Agentforce, the ADLC subagents: `adlc-author` and `adlc-engineer` (author), `
   of platform functionality, a new product or licence, or an irreversible org setting, or (4) a blocker that cannot be
   resolved. Everything else (deployments to the org, spikes, synthetic data, reversible assumptions, review fixes) is
   decided and recorded in `status.md` or in a decision with author `agent`.
-- **In both:** the Plan gate, the Design gate, the release, irreversible settings, every external message and org
+- **`light`:** as `critical`, and deploying, `publish` and `activate` against the project's org are not escalated
+  (light block).
+- **In all of them:** the Plan gate, the Design gate, the release, irreversible settings, every external message and org
   isolation.
+
+## Profiles: full and light
+
+The project chooses its profile at bootstrap, in the same question as the autonomy, and the orchestrator reminds the
+approver of it, with what it implies, when the Plan starts. Up to the Plan gate it is changed in `sdd.config.json` and
+decision 001; after that, with a new decision that supersedes 001 (M-11).
+
+| Option | `sdd.config.json` | What it implies |
+|---|---|---|
+| Full, OK at every step | `profile: full`, `autonomy: strict` | The whole method; the approver also approves the diff of every step before deploying |
+| Full, critical only | `profile: full`, `autonomy: critical` | The whole method; between steps, only what is critical is escalated |
+| Light | `profile: light` (autonomy `critical`) | The same gates and the spec with AC; less ceremony around them, parallel subagents and an automatic deploy, publish and activate in the project's org (light block) |
+
+Recommend full with `strict` the first time with the method, and light for demos with little risk and a short
+deadline. Going from light to full loses nothing: the requirements, the AC and the traceability already exist; the
+pieces of full (waves, sizes, test-first, the full step reports) are added from that moment.
+
+## Parallel orchestration
+
+In both profiles; the default way of executing the plan.
+- **Reservations by `Touches`:** each step lists the folders and the metadata it touches. Two steps that touch the same
+  thing are not launched at the same time. The shared files (profiles, permission sets, layouts, FlexiPages, the
+  `.object` files of shared objects) belong to the orchestrator: authors request the change as a patch in their step
+  report, and the orchestrator applies it when it closes each batch.
+- **Authors as subagents** (the Agent tool with `isolation: worktree`), with the common brief
+  (`references/author-brief.md`) and the assignment. For an Agentforce agent, `adlc-author` and `adlc-engineer`. Launch
+  in one message every step that is ready and does not collide; the results come back to you in the same turn.
+- **One reviewer per step,** also a subagent, with a separate context: `independent-code-review`, or `adlc-qa` for the
+  `.agent`. It is independent review (M-01): neither the author nor the orchestrator reviews it.
+- **Serial integration:** there is a single org. The orchestrator merges and deploys one step at a time and verifies it
+  in the org, with the browser if the step has UI AC.
+- Separate author sessions still work in `full` (for example, a very long step); then the handover between sessions of
+  `references/orchestrator.md` applies.
+
+## Browser
+
+To see and test the UI (Lightning pages, LWC, sites, the Enhanced Chat widget, the demo walkthrough). Rule M-12; the
+detail and the Salesforce gotchas are in `references/browser.md`.
+- **Only the project's Playwright MCP** (`.mcp.json`, server `playwright`, tools `mcp__playwright__*`), with
+  Playwright's own Chromium and its profile in `.playwright/profile`. Never the managed Chrome, the Browser pane or
+  Claude in Chrome: in Salesforce enterprise orgs they are disabled. If the tools are not in your session, say so: the
+  project needs its `.mcp.json` (`sdd-bootstrap` creates it), the user's approval of the MCP and a new session.
+- **Only the project's org:** the plugin's browser guard denies other orgs' hosts. The user logs in by hand, once, in
+  the Chromium window; you never type passwords.
+- **Plan:** a read-only tour of the org's UI, with screenshots in `docs/baseline/`.
+- **Execution:** a UI AC is verified with the label `browser check` after the deployment, by the integrator: what was
+  seen goes into `## Verification cases` of the step report, with the selected screenshots in
+  `docs/delivery-plan/evidence/<step>/`.
+- **Review:** the demo walkthrough is run in Chromium and fills `demo-walkthrough.md`.
+- **Never** click an irreversible setting in Setup without the approver's OK, and only synthetic data on screen.
 
 ## Communication
 
@@ -254,7 +344,8 @@ level. A change that grows goes back to triage; one discovered while building is
 
 ## References
 
-- `references/rules.md`: the why of each rule (M-01 to M-10) and what was discarded.
+- `references/rules.md`: the why of each rule (M-01 to M-12) and what was discarded.
+- `references/browser.md`: the browser with Playwright, its setup, its limits and the Salesforce gotchas.
 - `references/orchestrator.md`: the template to start or resume the orchestrator.
 - `references/author-brief.md`: the common rules of an author session and its assignment.
 - `references/communication.md`: the protocol for channels, acknowledgement and delivery verification.

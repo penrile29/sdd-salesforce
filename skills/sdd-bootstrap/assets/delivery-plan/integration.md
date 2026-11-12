@@ -31,7 +31,8 @@ profiles, dispatchers, CMDT, FlexiPages… of this project>.
 |---|---|---|---|---|---|
 
 ## Platform-specific steps in this project
-<OmniStudio (activation order), LWR site (republish), agent (publish and activate only at release)… whatever
+<OmniStudio (activation order), LWR site (republish), agent (publish and activate only at release; with the light profile, when the step is
+integrated)… whatever
 applies.>
 
 ## Verified with

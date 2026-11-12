@@ -45,6 +45,8 @@ The obligations are the spec's requirements and acceptance criteria, with their 
 
 Each step includes scope, artefacts, normative sources, contracts, dependencies, tests with their expected result, limits and state. Use the template in [references/templates.md](references/templates.md). The goal is that another session can implement it without redesigning interfaces or guessing the acceptance.
 
+In an sdd-salesforce project with the light profile (`method.profile: light`), the plan is a flat list of steps in a single wave, with the flat step template: `Satisfies`, `Touches`, `Skill` and, only if there is one, `Depends on`. `Touches` is also used in the full profile: it is what lets the orchestrator launch authors in parallel without collisions.
+
 Build a dependency graph without cycles. Distinguish functional dependency, contract dependency and file collision. Define what can start against a stub and what requires an integrated implementation. Do not copy the number of phases or the architecture of the project the method came from.
 
 ## 3. Derive the integration plan

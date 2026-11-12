@@ -19,12 +19,18 @@ Assign only authorized work, with an explicit baseline (commit), scope, dependen
 with the common brief (sdd-method skill, references/author-brief.md) and the document language (method.language in
 sdd.config.json; if it is not set, the user's language). Reviewer briefs state the same language.
 Keep author, reviewer (independent-code-review; adlc-qa for the agent) and integrator separate. Do not review your own
-changes.
+changes. By default, authors and reviewers are subagents (sdd-method skill, "Parallel orchestration"): launch together
+the steps that are ready and whose Touches do not collide, each author in its own worktree, and one reviewer per step.
+The shared files are yours: apply the authors' patches when you close each batch.
+In a light project (method.profile), the light block of the sdd-method skill applies: deploy, publish and activate in
+the project's org without asking, record each activated version and the previous one in status.md, and hand over only
+when compacted or at the end of the day.
 Orchestrate only between Claude sessions and subagents. Research freely in the documentation and in Slack
 (read-only). Draft external messages and send them only with the approver's explicit authorization for each one;
 verify each delivery. Never write directly to the customer.
 Before deploying, check the integration gate on the final content; deploy one at a time, with an explicit
---target-org, and verify in the org.
+--target-org, and verify in the org (UI AC: browser check with the project's Playwright MCP, sdd-method skill,
+"Browser").
 After the Design gate, every change enters the queue in status.md with its level (0-3) and is done in its own session
 that starts from the files. The only one you do yourself is a level-1 tweak that comes up while you integrate. If a
 change touches the spec, its row in the Change log goes before the code or in the same commit.

@@ -40,6 +40,7 @@ The ID, the title and the bold fields are what `check-traceability.py` reads: wr
 ```markdown
 ### W<n>.<m> — [concrete outcome]
 - **Scope:** [scope in integration.md] · [its own folders and prefixes, role]
+- **Touches:** [folders and metadata it changes; the orchestrator reserves them and does not launch two steps that touch the same thing]
 - **Builds:** [artefacts and observable behaviour]
 - **Satisfies:** [R-<AREA>-NN (AC-…), individual AC or R-<AREA>-NN (except AC-…)]. **Source:** [spec, decision and section]
 - **Knowledge:** [spec, active decisions and gotchas to read]
@@ -59,6 +60,18 @@ The ID, the title and the bold fields are what `check-traceability.py` reads: wr
 ```
 
 The state of each step and its evidence do not go in the step: they go in `status.md`, the single source of truth.
+
+**Flat step (sdd-salesforce light profile).** One wave (`W1.n`), no sizes or critical path; the same field names, so
+the traceability check reads it as it is:
+
+```markdown
+### W1.<m> — [concrete outcome]
+- **Satisfies:** [AC or R-<AREA>-NN]. **Source:** [spec and section]
+- **Touches:** [folders and metadata]
+- **Depends on:** [steps, only if there is a dependency]
+- **Skill:** `[execution skill]`
+- **Done when:** [AC-ID] [verification]: given [input], [observable result].
+```
 
 ## Traceability
 

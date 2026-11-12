@@ -12,7 +12,8 @@ backticks, parentheses or `bash -c '…'`. For each one it:
   (org list, org login, alias list, config get, project generate, plugins, help…);
 - if sdd.config.json cannot be read or has no org_alias, denies every command that touches an org until it is fixed;
 - asks for confirmation (ask) for `sf agent publish` and `sf agent activate`, which are the release gate, and, with
-  strict autonomy, for a deployment that is not --dry-run.
+  strict autonomy, for a deployment that is not --dry-run. With the light profile (method.profile), neither asks: they
+  are automatic in the project's org, which is still the only one allowed.
 It does not see scripts that call sf internally nor MCP tools: the method's rule covers that. On a failure of its own,
 it decides nothing.
 
@@ -287,7 +288,7 @@ def decide(command, cwd):
         if not targets and not local and P.local_target_org(root) != org:
             return "deny", ('"%s" touches an org and has no --target-org: the default org may belong to another '
                             'project. Repeat the command with --target-org %s.' % (shown, org))
-        if any(sub.startswith(r) for r in RELEASE):
+        if any(sub.startswith(r) for r in RELEASE) and P.V.profile(method) != "light":
             asks.append("Publishing or activating an agent is the release gate: it needs the explicit OK of the "
                         "approver (%s)." % (method.get("approver") or "the project's approver"))
         elif sub.startswith("project deploy") and not any(x.startswith("--dry-run") for x in f) \
@@ -435,6 +436,19 @@ def self_test():
         d = decide("sf project deploy start --target-org poc-demo", inside)
         if d[0] != "ask" or "Ana" not in d[1]:
             failures.append("with «metodo» (strict) plus an English «method», a deploy gives %r, not ask (F-001)" % d[0])
+        # CA-LIG-01.3 and 01.4: in light, publish, activate and deploy to its org do not ask; another org is still denied
+        write({"org_alias": "poc-demo", "metodo": {"perfil": "ligero", "autonomia": "estricta"}})
+        for command, expected in (("sf agent publish authoring-bundle --api-name A --target-org poc-demo --json", None),
+                                  ("sf agent activate --api-name A --target-org poc-demo --json", None),
+                                  ("sf project deploy start --source-dir force-app --target-org poc-demo --json", None),
+                                  ("sf agent publish authoring-bundle --api-name A --target-org beta-demo", "deny"),
+                                  ("sf project deploy start --source-dir force-app -o beta-demo --json", "deny")):
+            got = decide(command, inside)[0]
+            if got != expected:
+                failures.append("light: %r gives %r (expected %r)" % (command, got, expected))
+        write({"org_alias": "poc-demo", "method": {"profile": "full", "autonomy": "critical"}})
+        if decide("sf agent activate --api-name A --target-org poc-demo", inside)[0] != "ask":
+            failures.append("full: activate in its org does not ask (CA-LIG-01.3)")
         write("{ not json")
         if decide("sf data query -q 'SELECT Id FROM User' -o poc-demo", inside)[0] != "deny":
             failures.append("with a corrupt sdd.config.json, a command that touches an org is not denied")

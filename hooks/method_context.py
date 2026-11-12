@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import project as P  # noqa: E402
 
 CORE_MARKER = re.compile(r"<!-- core -->\s*\n(.*?)\n\s*<!-- /core -->", re.DOTALL)
+LIGHT_MARKER = re.compile(r"<!-- light -->\s*\n(.*?)\n\s*<!-- /light -->", re.DOTALL)
 # What does not count when deciding whether a folder is empty.
 IGNORED = {".git", ".sf", ".sfdx", ".vscode", ".idea", ".DS_Store", ".claude"}
 MARKER_TTL = 7 * 24 * 3600
@@ -33,13 +34,22 @@ MARKER_TTL = 7 * 24 * 3600
 MARKER_PREFIX = "nucleo-"
 
 
-def core(plugin_root):
+def block(plugin_root, marker):
     try:
         with open(os.path.join(plugin_root, "skills", "sdd-method", "SKILL.md"), encoding="utf-8") as fh:
-            m = CORE_MARKER.search(fh.read())
+            m = marker.search(fh.read())
     except OSError:
         return ""
     return m.group(1).strip() if m else ""
+
+
+def core(plugin_root):
+    return block(plugin_root, CORE_MARKER)
+
+
+def light(plugin_root):
+    """The light block of the sdd-method SKILL.md: injected after the core in light projects (method.profile)."""
+    return block(plugin_root, LIGHT_MARKER)
 
 
 def is_empty_folder(cwd):
@@ -70,9 +80,10 @@ def context(cwd, plugin_root=None):
     legacy = P.legacy_names(root)
     # A 0.2/0.3 CLAUDE.md looks for its own label to know the plugin is loaded.
     label = P.V.LEGACY_PROJECT_LABEL if legacy else "sdd project"
-    lines = ['[%s %s] %s "%s" in %s: org %s, approver %s, autonomy %s.' % (
+    profile = P.V.profile(method)
+    lines = ['[%s %s] %s "%s" in %s: org %s, approver %s, autonomy %s, profile %s.' % (
         name, version or "?", label, c.get("project") or os.path.basename(root), root, org or "(no org_alias)",
-        method.get("approver") or "(no approver)", method.get("autonomy") or "(no autonomy)")]
+        method.get("approver") or "(no approver)", method.get("autonomy") or "(no autonomy)", profile)]
     if problem:
         lines.append("Warning: %s. Until it is fixed, the plugin's guard denies the sf commands that touch an org."
                      % problem)
@@ -85,6 +96,9 @@ def context(cwd, plugin_root=None):
         lines.append(legacy)
     text = core(plugin_root or P.plugin_root())
     lines.append(text or "The method core could not be read: load the sdd-method skill before working.")
+    if profile == "light":
+        lines.append(light(plugin_root or P.plugin_root()) or "The light block could not be read: load the sdd-method "
+                     "skill and apply its light profile before working.")
     return "\n".join(lines)
 
 
@@ -267,6 +281,21 @@ def self_test():
             failures.append("unable to write the marker, UserPromptSubmit injects the core (and would repeat it)")
         if not respond(dict(start, session_id="s-6"), plugin, blocked):
             failures.append("unable to write the marker, SessionStart stops injecting the core")
+        # CA-LIG-01.2 and 01.7: a light project gets the core and then the light block; full or without a profile, only
+        # the core
+        for cfg, expected in (({"method": {"profile": "light"}}, True), ({"metodo": {"perfil": "ligero"}}, True),
+                              ({"method": {"profile": "full"}}, False), ({"method": {}}, False)):
+            with open(os.path.join(tmp, "poc", "sdd.config.json"), "w", encoding="utf-8") as fh:
+                json.dump(dict(cfg, org_alias="poc-demo"), fh)
+            t = context(inside, plugin) or ""
+            has = bool(light(plugin)) and light(plugin) in t
+            if has != expected or core(plugin) not in t or (has and t.index(core(plugin)) > t.index(light(plugin))):
+                failures.append("with %r, the light block is %s (CA-LIG-01.2)" % (cfg, "missing" if expected else
+                                                                                  "injected"))
+            if expected and ("profile light" not in t or "autonomy critical" not in t):
+                failures.append("with %r, the project line does not say profile light and autonomy critical" % cfg)
+        if not light(plugin) or "Light profile" not in light(plugin):
+            failures.append("the sdd-method SKILL.md has no light block")
         with open(os.path.join(tmp, "poc", "sdd.config.json"), "w", encoding="utf-8") as fh:
             json.dump({"org_alias": "poc-demo", "metodo": {"version": "99.0.0"}}, fh)
         if "older: update the plugin" not in (context(inside, plugin) or ""):

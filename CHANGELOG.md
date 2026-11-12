@@ -4,6 +4,39 @@ Each project records in its decision 001 and in `sdd.config.json` the version of
 plugin is a different one, the start hook and `check-environment.py` warn about it: check here what changed and, if it
 affects the project, record it with a decision.
 
+## 0.5.0 · 2026-11-12 (release)
+
+**Light profile.** A project is `full` (the whole method, as before) or `light` (`method.profile`). Light keeps the
+three gates (Plan, Design, release), the spec with requirements and AC, traceability, org isolation and the approver's
+OK for every external message and every irreversible org setting, and relaxes the rest: environment gaps are warnings,
+decisions only for what matters, no review of the spec and the plan before the Design gate, a flat delivery plan
+(`W1.n` with `Satisfies`, `Touches`, `Skill`), no test-first, deploy, `sf agent publish` and `sf agent activate` in the
+project's org without asking (the `sf` guard no longer asks), a release gate that is "demo accepted", and handovers only
+when compacted or at the end of the day. The hook injects a light block after the core in light projects. Rule M-11
+explains why and lists the irreversible settings. `sdd-bootstrap` asks one question with three options (full with OK at
+every step, full critical only, light). Projects without `method.profile` are `full`: nothing changes for them. The
+Spanish aliases `metodo.perfil`, `ligero` and `completo` are accepted.
+
+**Parallel orchestration.** In both profiles, the orchestrator launches author subagents in parallel, each in its own
+worktree, with the files they touch reserved through the new step field `Touches`, and one reviewer subagent with a
+separate context per step; it integrates and deploys one step at a time. Separate author sessions still work in full.
+
+**Browser for UI tests (rule M-12).** `sdd-bootstrap` asks whether the project will test in the browser (yes by
+default with UI areas) and writes `.mcp.json` with the Playwright MCP pinned in the catalog (`@playwright/mcp@0.0.83`,
+Chromium revision 1247), its profile and output in `.playwright/` (ignored by git), and `environment.browser` in
+`sdd.config.json`. When `environment.browser` is true, or the project already has the `playwright` server,
+`check-environment.py` checks `node`, `npx`, the `.mcp.json` and the Chromium revision and gives the command that
+installs it; a project without the key and with UI areas only gets a warning. With `--query-org` it records the org's
+My Domain in the inventory (`org.my_domain`; a sandbox keeps its suffix, `acme--uat`, and the value is only kept while
+`org_alias` does not change). A new hook, `browser_guard.py`, denies opening the host of another Salesforce org from
+the Playwright MCP (a sandbox is another org), also in the file that `browser_run_code_unsafe` names, and asks while
+the My Domain is not recorded. The verification label `browser check` (`comprobación en navegador`
+in the `es` vocabulary) is read in the step report, and the reference `references/browser.md` gathers the setup and the
+Salesforce gotchas. An older project gets the browser with `sdd-bootstrap --add-missing`, which merges `.mcp.json`
+without touching the rest.
+
+**For projects on 0.4:** nothing breaks. To adopt light or the browser, record it with a decision that supersedes 001.
+
 ## 0.4.1 · 2026-11-11 (release)
 
 **The map opens on the web.** GitHub shows HTML files as source code, so the README now links `MAP.html` to its

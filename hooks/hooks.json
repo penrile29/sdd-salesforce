@@ -1,5 +1,5 @@
 {
-  "description": "sdd-salesforce: the method core at the start of every session (or in the first message, if the session does not have it yet), a short notice in SFDX projects and empty folders, and the guard for sf commands, only in projects with sdd.config.json",
+  "description": "sdd-salesforce: the method core at the start of every session (or in the first message, if the session does not have it yet), a short notice in SFDX projects and empty folders, the guard for sf commands and the browser guard for the Playwright MCP, only in projects with sdd.config.json",
   "hooks": {
     "SessionStart": [
       {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/method_context.py\"", "timeout": 10}]}
@@ -9,7 +9,9 @@
     ],
     "PreToolUse": [
       {"matcher": "Bash",
-       "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/sf_guard.py\"", "timeout": 10}]}
+       "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/sf_guard.py\"", "timeout": 10}]},
+      {"matcher": "mcp__playwright__.*",
+       "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/browser_guard.py\"", "timeout": 10}]}
     ]
   }
 }

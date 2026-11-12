@@ -10,10 +10,12 @@ The orchestrator sends each author session this brief plus the individual assign
      "Verification" column says what evidence your step builds for each AC;
    - the sections of the spec that the step cites (requirements with their AC, and the design);
    - the `Active` decisions and the gotchas that the step cites.
-2. **Your scope is the folders and prefixes of your step** (`docs/delivery-plan/integration.md`). Do not edit shared
+2. **Your scope is the folders and metadata of your step** (its `Touches` field, or its scope in
+   `docs/delivery-plan/integration.md`). Do not edit shared
    files (permission sets, profiles, dispatchers, CMDT, FlexiPages…): request the change in your step report, as a
    patch. Do not change a frozen contract: propose the change.
-3. **Test first** where the step says so (level 3 and Apex and agent logic):
+3. **Test first** where the step says so (level 3 and Apex and agent logic; in a light project there is no test-first,
+   but the tests the deployment requires are still written, and the step report only has its verification cases):
    - first commit: the tests for the AC (with a stub if they do not compile without one) and the **verification
      cases** of your step report, `docs/delivery-plan/step-reports/<step>.md`, under the heading
      `## Verification cases`: for each demo, record, preview or manual-test AC, the stimulus, the expected result and
@@ -34,6 +36,8 @@ The orchestrator sends each author session this brief plus the individual assign
 8. **If a product rule is not in the spec,** do not invent it: record it as a question in your step report. You may
    take a reversible assumption within the design, marking it as such.
 9. **Do not write `status.md`:** return your status to the orchestrator.
+10. **Browser:** the `browser check` of your UI AC is done by the integrator after the deployment. In your verification
+    cases, write what it must do and see. Do not use the browser to change anything in the org.
 
 ## What you return (step report, in `docs/delivery-plan/step-reports/<step>.md`)
 - Branch, commits and diff against `main`.
